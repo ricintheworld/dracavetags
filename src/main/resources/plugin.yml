@@ -1,0 +1,78 @@
+name: DraCaveTags
+main: com.dracave.tags.DraCaveTags
+version: '${version}'
+api-version: '1.21'
+authors: [DraCave]
+description: 称号仓库、商店、自定义称号一体化插件（Vault / PlayerPoints / 称号币 / 物品兑换，MySQL / SQLite 存储）
+folia-supported: true
+softdepend: [PlaceholderAPI, Vault, PlayerPoints]
+libraries:
+  - com.zaxxer:HikariCP:5.1.0
+  - com.mysql:mysql-connector-j:8.4.0
+  - org.xerial:sqlite-jdbc:3.46.0.0
+  - org.slf4j:slf4j-api:1.7.36
+  - org.slf4j:slf4j-nop:1.7.36
+  - com.h2database:h2:2.1.214
+commands:
+  dracavetags:
+    description: 称号插件主命令
+    aliases: [ dctags, dct, dracavetags, tags ]
+    usage: "/dctags help"
+  ttt:
+    description: 旧数据迁移（PlayerTitle / DraCaveTitle → DraCaveTags）
+    usage: "/ttt title <null|color> | /ttt db [源库] | /ttt old <--check|db|title>"
+    permission: dracave.tags.migrate
+permissions:
+  dracave.tags.migrate:
+    description: 旧数据迁移命令
+    default: op
+  ttt.use:
+    description: 允许执行 PlayerTitle 数据迁移（旧权限兼容）
+    default: op
+  dracave.tags.use:
+    description: 玩家使用权限（仓库/商店/穿戴/自定义）
+    default: true
+  dracave.tags.admin:
+    description: 管理员权限（全部管理命令）
+    default: op
+  dracave.tags.admin.panel:
+    description: 管理面板权限（可视化编辑称号）
+    default: op
+  dracave.tags.admin.upload:
+    description: 称号定义上传权限（tags.yml 上传）
+    default: op
+  dracave.tags.custom.static:
+    description: 创建静态自定义称号权限
+    default: false
+  dracave.tags.custom.dynamic:
+    description: 创建动态自定义称号权限（渐变/彩虹/闪烁/帧动画）
+    default: false
+  dracave.tags.custom.limit.1:
+    description: 自定义称号数量上限 1 个
+    default: false
+  dracave.tags.custom.limit.2:
+    description: 自定义称号数量上限 2 个
+    default: false
+  dracave.tags.custom.limit.3:
+    description: 自定义称号数量上限 3 个
+    default: false
+  dracave.tags.custom.limit.5:
+    description: 自定义称号数量上限 5 个
+    default: false
+  dracave.tags.custom.limit.10:
+    description: 自定义称号数量上限 10 个
+    default: false
+  dracave.tags.custom.limit.unlimited:
+    description: 无限自定义称号
+    default: op
+  dracave.tags.*:
+    description: 全部权限
+    default: op
+    children:
+      dracave.tags.use: true
+      dracave.tags.admin: true
+      dracave.tags.admin.panel: true
+      dracave.tags.admin.upload: true
+      dracave.tags.custom.static: true
+      dracave.tags.custom.dynamic: true
+      dracave.tags.custom.limit.unlimited: true

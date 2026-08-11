@@ -1,0 +1,47 @@
+title: '<gradient:#7AFBFF:#B97AFF>称号主菜单</gradient>'
+size: 36
+inventory:
+  - '框框框框框框框框框'
+  - '框空仓空商空自空框'
+  - '框空空空奖空空空框'
+  - '框框框框框框框框管'
+icons:
+  框:
+    material: GRAY_STAINED_GLASS_PANE
+    display: ' '
+  仓:
+    material: CHEST
+    display: '<aqua>称号仓库</aqua>'
+    lore:
+      - '<gray>浏览并穿戴已解锁的称号'
+    left:
+      - 'open vault'
+  商:
+    material: EMERALD
+    display: '<green>称号商店</green>'
+    lore:
+      - '<gray>购买新的称号'
+    left:
+      - 'open shop'
+  自:
+    material: ANVIL
+    display: '<light_purple>自定义称号</light_purple>'
+    lore:
+      - '<gray>创建属于你自己的称号'
+    left:
+      - 'open custom'
+  奖:
+    material: GOLD_INGOT
+    display: '<gold>奖励中心</gold>'
+    lore:
+      - '<gray>查看里程碑奖励'
+    left:
+      - 'open reward'
+  管:
+    material: COMMAND_BLOCK
+    display: '<red>管理面板</red>'
+    lore:
+      - '<gray>管理员配置称号'
+    permission: dracave.tags.admin
+    left:
+      - 'open admin-shop'
