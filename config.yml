@@ -1,0 +1,87 @@
+# 语言: zh_cn | en_us
+lang: zh_cn
+
+# ==================== 聊天 ====================
+chat:
+  enabled: true
+  # 玩家未装备称号时显示的默认文本（空 = 不显示）
+  default-title: "[ 旅行者 ]"
+  # {title}=称号 {player}=玩家名
+  format: "{title}{player} »"
+
+# ==================== 商店 ====================
+shop:
+  enabled: true
+  # 购买后自动穿戴
+  auto-equip: true
+  currencies:
+    vault:
+      display: "<green>金币</green>"
+    playerpoints:
+      display: "<aqua>点券</aqua>"
+    coin:
+      display: "<gold>称号币</gold>"
+    item:
+      display: "<yellow>物品</yellow>"
+
+# ==================== 数据库 ====================
+database:
+  # SQLITE | MYSQL（默认 SQLITE）
+  type: SQLITE
+  # 定时拉取在线玩家穿戴状态（游戏刻），跨服切服跟随
+  sync-interval-ticks: 200
+  mysql:
+    host: "127.0.0.1"
+    port: 3306
+    database: "minecraft"
+    user: "root"
+    password: ""
+    params: "?useSSL=false&characterEncoding=utf8&serverTimezone=UTC&allowPublicKeyRetrieval=true"
+    table-prefix: "dracavetags_"
+    pool-size: 4
+  sqlite:
+    file: "data.db"
+
+# ==================== 购买确认界面 ====================
+interface:
+  purchase-confirm:
+    title: "<gold>确认购买称号</gold>"
+    size: 27
+    title-slot: 13
+    confirm-slot: 11
+    cancel-slot: 15
+    confirm-material: LIME_CONCRETE
+    cancel-material: RED_CONCRETE
+  sounds:
+    open: BLOCK_NOTE_BLOCK_PLING
+    click: UI_BUTTON_CLICK
+    switch-page: BLOCK_NOTE_BLOCK_BASS
+    success: ENTITY_PLAYER_LEVELUP
+    error: BLOCK_NOTE_BLOCK_BASS
+    delete: BLOCK_NOTE_BLOCK_BASEDRUM
+
+# ==================== 称号切换冷却（秒） ====================
+display:
+  toggles-cooldown: 10
+
+# ==================== 动画 ====================
+animation:
+  # 默认动画周期（游戏刻，40=2秒）
+  default-period-ticks: 40
+  # 帧动画步进间隔（游戏刻）
+  frame-step-ticks: 2
+  # 渐变每步跨过几个字符
+  gradient-char-step: 1
+
+# ==================== 自定义称号 ====================
+custom:
+  enabled: true
+  text:
+    max-length: 16
+  dynamic:
+    min-period-ticks: 5
+    max-period-ticks: 200
+    max-colors: 5
+    max-text-frames: 10
+  filter:
+    blocked-words: []

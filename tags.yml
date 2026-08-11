@@ -1,0 +1,96 @@
+# ==================== DraCaveTags 测试称号定义 ====================
+# 本文件为称号定义的主编辑源，仅在 upload 时读取和覆写。
+#   /dctags upload all        读取本文件 -> 写入数据库 -> 拆分为 tags/ 文件夹
+#   /dctags upload data       从数据库同步 -> 覆写本文件 -> 拆分为 tags/ 文件夹
+#   /dctags upload all --check 仅校验本文件格式
+# 运行时从 tags/ 文件夹加载称号定义，tag 文件不会被实时修改。
+#
+# 本文件仅保留 5 个测试称号，覆盖 5 种动画类型，文本统一为 [测试称号]。
+#
+# 字段说明：
+#   text                   称号显示文本（纯文本，自动转义，1-64 字符）
+#   description            描述（多行，支持 MiniMessage 格式）
+#   icon                   GUI 中显示的物品材质
+#   order                  仓库/商店排列顺序（越小越靠前）
+#   colors                 1-8 个 #RRGGBB 十六进制颜色
+#   gradient-cycle-seconds 渐变循环时间（秒，0.2-60），多色时生效
+#   animation-type         动画类型
+#   gradient-mode          渐变流动模式（cycle/pingpong）
+#   period-ticks           动画周期覆盖（游戏刻）
+#   default-unlocked       新玩家自动拥有的称号
+#   permission             购买/使用所需权限节点（可选）
+#   shop:
+#     hidden               是否在商店隐藏
+#     currency             货币类型：vault / playerpoints / coin / item
+#     price                价格
+#     item                 货币为 item 时必填：支付的物品材质
+
+tags:
+  test-static:
+    text: "[测试称号]"
+    description:
+      - "<gray>静态单色"
+    icon: NAME_TAG
+    order: 10
+    default-unlocked: true
+    colors: ["#FFAA00"]
+
+  test-gradient:
+    text: "[测试称号]"
+    description:
+      - "<gray>单字渐变 · 色带流动"
+    icon: NETHER_STAR
+    order: 20
+    default-unlocked: false
+    colors: ["#7AFBFF", "#B97AFF", "#FF75C8"]
+    gradient-cycle-seconds: 2.0
+    animation-type: gradient
+    shop:
+      hidden: false
+      currency: vault
+      price: "2000.00"
+
+  test-solid:
+    text: "[测试称号]"
+    description:
+      - "<gray>整体变色 · 同色循环"
+    icon: ORANGE_DYE
+    order: 30
+    default-unlocked: false
+    colors: ["#FF6A00", "#FFD700", "#FF4500"]
+    gradient-cycle-seconds: 2.0
+    animation-type: solid
+    shop:
+      hidden: false
+      currency: vault
+      price: "3000.00"
+
+  test-rainbow:
+    text: "[测试称号]"
+    description:
+      - "<gray>彩虹 · 逐字变色"
+    icon: TOTEM_OF_UNDYING
+    order: 40
+    default-unlocked: false
+    colors: ["#FF0000", "#FF8800", "#FFFF00", "#00FF00", "#00FFFF", "#0088FF", "#8800FF", "#FF00FF"]
+    animation-type: rainbow
+    period-ticks: 30
+    shop:
+      hidden: false
+      currency: vault
+      price: "4000.00"
+
+  test-flash:
+    text: "[测试称号]"
+    description:
+      - "<gray>闪烁 · 多色交替"
+    icon: GLOW_INK_SAC
+    order: 50
+    default-unlocked: false
+    colors: ["#FF00FF", "#00FFFF"]
+    gradient-cycle-seconds: 0.5
+    animation-type: flash
+    shop:
+      hidden: false
+      currency: vault
+      price: "5000.00"
