@@ -1,48 +1,82 @@
-# ==================== DraCaveTags 测试称号定义 ====================
-# 本文件为称号定义的主编辑源，仅在 upload 时读取和覆写。
-#   /dctags upload all        读取本文件 -> 写入数据库 -> 拆分为 tags/ 文件夹
-#   /dctags upload data       从数据库同步 -> 覆写本文件 -> 拆分为 tags/ 文件夹
-#   /dctags upload all --check 仅校验本文件格式
-# 运行时从 tags/ 文件夹加载称号定义，tag 文件不会被实时修改。
+#温馨提示，如果您不会修改yml，请在游戏内使用管理员面板，绝对别改配置
+
+# ── 这个文件是干什么的？────────────────────────────────────
+#   tags.yml 是称号定义文件
+#   你修改后需要用指令上传
+#   /dctags upload all          读取本文件 → 写数据库 → 拆成 tags/ 文件夹
+#   /dctags upload data         从数据库同步 → 覆写本文件 → 拆成 tags/ 文件夹
+#   /dctags upload all --check  只校验本文件格式，不写入
+# 注意：运行时只从 tags/ 文件夹加载称号，本文件不会被实时读取/修改，但是你可以通过修改此文件来修改全部称号定义
 #
-# 本文件仅保留 5 个测试称号，覆盖 5 种动画类型，文本统一为 [测试称号]。
+# ── 根节点 ────────────────────────────────────────────────
+# 所有称号都放在 tags: 下面，每个称号用一个「ID」作为键。
+# （旧版插件用 titles: 作根节点，这里也兼容，写 titles: 也能读。）
 #
-# 字段说明：
-#   text                   称号显示文本（纯文本，自动转义，1-64 字符）
-#   description            描述（多行，支持 MiniMessage 格式）
-#   icon                   GUI 中显示的物品材质
-#   order                  仓库/商店排列顺序（越小越靠前）
-#   colors                 1-8 个 #RRGGBB 十六进制颜色
-#   gradient-cycle-seconds 渐变循环时间（秒，0.2-60），多色时生效
-#   animation-type         动画类型
-#   gradient-mode          渐变流动模式（cycle/pingpong）
-#   period-ticks           动画周期覆盖（游戏刻）
-#   default-unlocked       新玩家自动拥有的称号
-#   permission             购买/使用所需权限节点（可选）
-#   shop:
-#     hidden               是否在商店隐藏
-#     currency             货币类型：vault / playerpoints / coin / item
-#     price                价格
-#     item                 货币为 item 时必填：支付的物品材质
+# ── 称号 ID 命名规则（必看，配错直接上传失败）──────────────
+#   只允许：小写字母 a-z、数字 0-9、下划线 _、连字符 -
+#   必须以小写字母或数字开头；总长度最多 64 个字符
+#   合法：my-tag  vip1  neon_blue  rank-2026
+#   非法：MyTag(大写)  -tag(开头是-)  VIP(大写)
+#
+# ── 字段速查表 ───────────────────────────────────────────
+#   字段                   类型       必填  说明
+#   text                  字符串      ✔    显示文本，1–64 字，纯文本自动转义
+#   description           列表        ✖    多行描述，支持 MiniMessage 颜色码
+#   icon                  字符串      ✖    GUI 物品材质，默认 NAME_TAG
+#   order                 整数        ✖    排列顺序，越小越靠前，默认 0
+#   colors                列表        ✖    1–8 个 #RRGGBB 颜色
+#   default-unlocked      布尔        ✖    新玩家自动拥有，默认 false
+#   permission            字符串      ✖    装备/购买所需权限节点（≤255 字）
+#   animation-type        字符串      ✖    动画类型（见下方枚举）
+#   gradient-mode         字符串      ✖    cycle(默认)/pingpong
+#   gradient-cycle-seconds 数字       ✖    0.2–60 秒，多色时生效，默认 2.0
+#   period-ticks          整数        ✖    动画周期(游戏刻)，>0 会覆盖上面秒数
+#   frames                列表        ✖    frames 动画专用，2–10 帧
+#   shop                  节          ✖    商店设置（见下）
+#   potion-effects        列表        ✖    装备时附加的药水效果
+#   particle              节          ✖    装备时显示的粒子
+#
+# ── animation-type 合法取值 ───────────────────────────────
+#   gradient / flowing      多色渐变流动（需 ≥2 色）
+#   solid   / cycle         整体同色循环（需 ≥2 色）
+#   rainbow                 逐字彩虹（不需要 colors）
+#   flash   / flashing      多色交替闪烁（需 ≥2 色）
+#   frames  / frame         文本帧动画（用 frames 给 2–10 帧）
+#   static  / 留空          静态无动画
+#   gradient-mode 别名：pingpong 也可写 bounce / cos / 回弹；其余都当作 cycle
+#
+# ── shop.currency 合法取值 ────────────────────────────────
+#   vault          经济插件（Vault）
+#   playerpoints   玩家点数（别名 points / pp）
+#   coin           插件内置币（别名 tagcoin）
+#   item           用物品支付（别名 itemstack / 物品；必须配 shop.item）
+#
+# ── 五条铁律（违反会报错，上传失败）──────────────────────
+#   1) default-unlocked: true 的称号，不能再配 shop 价格
+#   2) text 里写了 MiniMessage 标签（带 < >）就只能静态显示，不能配动画
+#   3) colors 只有 1 个颜色时，不能写 gradient-cycle-seconds
+#   4) shop.currency 和 shop.price 必须「同时有或同时无」
+#   5) 货币用 item 时，必须再写 shop.item 指定支付物品
+# ============================================================
 
 tags:
-  test-static:
-    text: "[测试称号]"
+  default:
+    text: "[萌新]"
     description:
-      - "<gray>静态单色"
-    icon: NAME_TAG
+      - "<gray>默认称号"
+    icon: AXOLOTL_BUCKET
     order: 10
     default-unlocked: true
-    colors: ["#FFAA00"]
+    colors: ["#FFBBBB"]
 
-  test-gradient:
-    text: "[测试称号]"
+  gradient:
+    text: "[流光溢彩]"
     description:
-      - "<gray>单字渐变 · 色带流动"
+      - "<gray>默认动态渐变称号"
     icon: NETHER_STAR
     order: 20
     default-unlocked: false
-    colors: ["#7AFBFF", "#B97AFF", "#FF75C8"]
+    colors: ["#00EEFF", "#DE92FF", "#FF88FF"]
     gradient-cycle-seconds: 2.0
     animation-type: gradient
     shop:
@@ -50,14 +84,14 @@ tags:
       currency: vault
       price: "2000.00"
 
-  test-solid:
-    text: "[测试称号]"
+  holegra:
+    text: "[息韵流光]"
     description:
-      - "<gray>整体变色 · 同色循环"
+      - "<gray>默认整体动态渐变称号"
     icon: ORANGE_DYE
     order: 30
     default-unlocked: false
-    colors: ["#FF6A00", "#FFD700", "#FF4500"]
+    colors: ["#00EEFF", "#DE92FF", "#FF88FF"]
     gradient-cycle-seconds: 2.0
     animation-type: solid
     shop:
@@ -65,10 +99,10 @@ tags:
       currency: vault
       price: "3000.00"
 
-  test-rainbow:
-    text: "[测试称号]"
+  rainbowcandy:
+    text: "[彩虹糖]"
     description:
-      - "<gray>彩虹 · 逐字变色"
+      - "<gray>默认彩虹动态渐变称号"
     icon: TOTEM_OF_UNDYING
     order: 40
     default-unlocked: false
@@ -80,14 +114,14 @@ tags:
       currency: vault
       price: "4000.00"
 
-  test-flash:
-    text: "[测试称号]"
+  flash:
+    text: "[红绿灯]"
     description:
-      - "<gray>闪烁 · 多色交替"
+      - "<gray>默认闪烁称号"
     icon: GLOW_INK_SAC
     order: 50
     default-unlocked: false
-    colors: ["#FF00FF", "#00FFFF"]
+    colors: ["#FF0000", "#00FF00"]
     gradient-cycle-seconds: 0.5
     animation-type: flash
     shop:

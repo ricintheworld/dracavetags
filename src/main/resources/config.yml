@@ -5,9 +5,9 @@ lang: zh_cn
 chat:
   enabled: true
   # 玩家未装备称号时显示的默认文本（空 = 不显示）
-  default-title: "[ 旅行者 ]"
+  default-title: "[旅行者]"
   # 管理面板创建称号时的默认文本（支持 MiniMessage 渐变）
-  create-title: "[ 称号 ]"
+  create-title: "[新建称号]"
   # {title}=称号 {player}=玩家名
   format: "{title}{player} »"
 
@@ -64,7 +64,7 @@ interface:
 
 # ==================== 称号切换冷却（秒） ====================
 display:
-  toggles-cooldown: 10
+  toggles-cooldown: 3
 
 # ==================== 动画 ====================
 animation:

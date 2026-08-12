@@ -1,4 +1,4 @@
-  prefix: "<dark_gray>[<gradient:#7AFBFF:#B97AFF>称号</gradient>]</dark_gray> "
+  prefix: "<gradient:#FF0000:#FF00FF>龙亲称号系统 » </gradient>"
   loading: "<yellow>称号数据仍在加载，请稍后再试。</yellow>"
   unavailable: "<red>称号服务当前不可用，请联系管理员检查数据库。</red>"
   no-permission: "<red>你没有权限执行该操作。</red>"

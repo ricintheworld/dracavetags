@@ -1,4 +1,4 @@
-prefix: "<dark_gray>[<gradient:#7AFBFF:#B97AFF>Tags</gradient>]</dark_gray> "
+prefix: "<gradient:#FF0000:#FF00FF>DraCaveTags » </gradient>"
 loading: "<yellow>Tag data is still loading, please try again later.</yellow>"
 unavailable: "<red>The tag service is currently unavailable. Please contact an administrator.</red>"
 no-permission: "<red>You do not have permission to do this.</red>"

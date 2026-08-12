@@ -6,8 +6,8 @@
 
 [![MineBBS](https://img.shields.io/badge/MineBBS-教程帖-orange?style=flat-square)](https://www.minebbs.com/threads/dracavetitle-gui.48962/#post-229305)
 [![QQ Group](https://img.shields.io/badge/QQ群-1101907336-blue?style=flat-square&logo=tencentqq)](https://qm.qq.com/)
-[![Paper](https://img.shields.io/badge/Paper-1.16.5+-green?style=flat-square&logo=papermc)](https://papermc.io/)
-[![Java](https://img.shields.io/badge/Java-17+-yellow?style=flat-square&logo=openjdk)](https://adoptium.net/)
+[![Paper](https://img.shields.io/badge/Paper-1.21+-green?style=flat-square&logo=papermc)](https://papermc.io/)
+[![Java](https://img.shields.io/badge/Java-21+-yellow?style=flat-square&logo=openjdk)](https://adoptium.net/)
 
 [简介](#-简介) • [快速开始](#-快速开始) • [亮点](#-亮点) • [命令一览](#-命令一览) • [权限](#-权限一览) • [变量](#-变量一览) • [GUI 自定义](#-gui-自定义) • [升级指南](#-从-114-升级)
 
@@ -17,9 +17,9 @@
 
 ## 📖 简介
 
-DraCaveTags 是一款面向 **Paper 系服务端**的动态称号插件，将「称号仓库 + 称号商店 + 自定义称号 + 管理面板」整合进一个轻量插件中。
+DraCaveTags 是一款支持 **Paper 系服务端**的动态称号插件，将「称号仓库 + 称号商店 + 自定义称号 + 管理面板」缝进一个轻量插件中。
 
-- 🎨 **五种动态效果**：渐变、彩虹、闪烁、帧动画等，实时渲染无需资源包
+- 🎨 **真动态效果**：渐变、彩虹、闪烁、帧动画等，实时渲染无需资源包
 - ✨ **称号增值**：可挂载粒子特效与药水效果，支持数量排行榜
 - 💰 **四种货币出售**：Vault / PlayerPoints / 称号币 / 物品（兼容 IA / CE 等自定义物品）
 - 🌐 **多语言支持**：内置 `zh_cn.yml` 与 `en_us.yml`，热重载即时生效
@@ -155,7 +155,7 @@ DraCaveTags 是一款面向 **Paper 系服务端**的动态称号插件，将「
 
 ## 🏷️ 变量一览
 
-> 需安装 PlaceholderAPI 并使用 `/papi ecloud download DraCaveTags` 下载扩展
+> 需安装 PlaceholderAPI
 
 | 变量 | 说明 |
 | :--- | :--- |
@@ -182,8 +182,6 @@ DraCaveTags 是一款面向 **Paper 系服务端**的动态称号插件，将「
 | `custom.yml` | 自定义称号 |
 | `admin.yml` | 管理员菜单 |
 | `reward.yml` | 奖励中心 |
-
-> 💡 格式为视觉化网格（与 SweetPlayerMarket 同款设计），每个独特汉字映射一个图标，可在 `icons` 节点下自定义材质、名称、描述、点击动作。
 
 ---
 
