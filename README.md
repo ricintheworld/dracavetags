@@ -1,6 +1,6 @@
 <div align="center">
 
-# 🏷️ DraCaveTags 2.0.0
+# 🏷️ DraCaveTags v2
 
 **称号仓库 + 商店 + 自定义 + 管理面板 —— 一体化动态称号插件**
 
@@ -187,7 +187,7 @@ DraCaveTags 是一款支持 **Paper 系服务端**的动态称号插件，将「
 
 ## ⬆️ 从 1.1.4 升级
 
-1.  安装 2.0.0 JAR，重启服务器
+1.  安装 JAR，重启服务器
 2.  执行 `/ttt old --check` 检查旧数据
 3.  执行 `/ttt old db` 迁移玩家数据（称号穿戴、解锁、称号币、额度）
 4.  执行 `/ttt old title` 迁移称号定义

@@ -85,6 +85,14 @@ public final class GuiConfig {
         return menus.get(menuKey);
     }
 
+    /**
+     * 杩斿洖鍏ㄩ儴宸叉敞鍐岀殑鑿滃崟 key锛堝搴?gui/ 鐩綍涓嬬殑 yml 鏂囦欢鍚嶏紝涓嶅惈鎵╁睍鍚嶏級銆俙r
+     * 鐢ㄤ簬 /dctags menu <key> 鐨?tab 琛ュ叏銆俙r
+     */
+    public Set<String> keys() {
+        return menus.keySet();
+    }
+
     public IconDef iconAt(MenuDef menu, int slot, char fillWith) {
         if (menu == null) return null;
         IconDef def = menu.slots().get(slot);

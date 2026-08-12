@@ -21,6 +21,7 @@ import com.dracave.tags.panel.AdminConsole;
 import com.dracave.tags.render.DCTagRenderer;
 import com.dracave.tags.screen.AdminScreen;
 import com.dracave.tags.screen.CustomScreen;
+import com.dracave.tags.screen.GenericMenuScreen;
 import com.dracave.tags.screen.MainScreen;
 import com.dracave.tags.screen.RewardScreen;
 import com.dracave.tags.screen.ShopScreen;
@@ -70,7 +71,7 @@ public final class DCTagCommand implements CommandExecutor, TabCompleter {
         }
         String sub = args.length == 0 ? "open" : args[0].toLowerCase(java.util.Locale.ROOT);
         boolean playerCommand = sub.equals("open") || sub.equals("shop") || sub.equals("custom") || sub.equals("view")
-                || sub.equals("wear") || sub.equals("clear") || sub.equals("reward") || sub.equals("ranking");
+                || sub.equals("wear") || sub.equals("clear") || sub.equals("reward") || sub.equals("ranking") || sub.equals("menu");
         if (!playerCommand && !sender.hasPermission("dracave.tags.admin")) {
             plugin.messages().send(sender, "no-permission");
             return true;
@@ -114,6 +115,7 @@ public final class DCTagCommand implements CommandExecutor, TabCompleter {
                 case "panel" -> panel(sender, args, false);
                 case "panel-id" -> panel(sender, args, true);
                 case "panel-edit" -> panelEdit(sender, args);
+                case "menu" -> menu(sender, args);
                 case "help" -> help(sender);
                 default -> help(sender);
             }
@@ -1209,6 +1211,25 @@ public final class DCTagCommand implements CommandExecutor, TabCompleter {
         }
     }
 
+    private void menu(CommandSender sender, String[] args) {
+        if (args.length < 2) {
+            sender.sendMessage("§eUsage: /dctags menu <name>");
+            sender.sendMessage("§7Available: " + String.join(", ", availableMenus()));
+            return;
+        }
+        String key = args[1].toLowerCase(java.util.Locale.ROOT);
+        if (plugin.guiConfig() == null || plugin.guiConfig().get(key) == null) {
+            sender.sendMessage("§cMenu " + key + " not found");
+            sender.sendMessage("§7Available: " + String.join(", ", availableMenus()));
+            return;
+        }
+        requirePlayer(sender, p -> new GenericMenuScreen(plugin, p, key).open());
+    }
+
+    private java.util.List<String> availableMenus() {
+        if (plugin.guiConfig() == null) return java.util.List.of();
+        return plugin.guiConfig().keys().stream().sorted().toList();
+    }
     private void help(CommandSender sender) {
         boolean admin = sender.hasPermission("dracave.tags.admin");
         sender.sendMessage("§e§m-------------§f[§eDraCaveTags§f]§e§m-------------");
@@ -1307,7 +1328,7 @@ public final class DCTagCommand implements CommandExecutor, TabCompleter {
             return List.of();
         }
         if (args.length == 1) {
-            List<String> values = new ArrayList<>(List.of("open", "shop", "custom", "wear", "clear", "view", "reward", "ranking"));
+            List<String> values = new ArrayList<>(List.of("open", "shop", "custom", "wear", "clear", "view", "reward", "ranking", "menu"));
             if (sender.hasPermission("dracave.tags.admin")) {
                 values.addAll(List.of("listTitle", "adminShop", "add", "create", "del", "set", "addPlayerTitle", "addCoin",
                         "subtractCoin", "changeItem", "addReward", "randomCard", "setCustom", "addCustom",
@@ -1325,6 +1346,12 @@ public final class DCTagCommand implements CommandExecutor, TabCompleter {
                 String action = args[1].toLowerCase(java.util.Locale.ROOT);
                 if ((action.equals("create") || action.equals("edit")) && args.length == (action.equals("edit") ? 4 : 3)) {
                     return filter(customTypes(sender), args[args.length - 1]);
+                }
+                return List.of();
+            }
+            case "menu" -> {
+                if (args.length == 2) {
+                    return filter(availableMenus(), args[1]);
                 }
                 return List.of();
             }
