@@ -4,6 +4,7 @@ import com.dracave.tags.DraCaveTags;
 import com.dracave.tags.config.GuiConfig.*;
 import com.dracave.tags.handlers.*;
 import com.dracave.tags.render.DCTagRenderer;
+import com.dracave.tags.util.ItemResolver;
 import com.dracave.tags.util.SchedulerUtil;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.TextDecoration;
@@ -70,7 +71,7 @@ public final class CustomScreen implements ClickableScreen {
 
     private ItemStack tagItem(CustomDCTag tag) {
         var def = plugin.registry().get(tag.id());
-        ItemStack i = new ItemStack(Material.NAME_TAG); ItemMeta m = i.getItemMeta(); if (m == null) return i;
+        ItemStack i = ItemResolver.resolve(tag.icon()); ItemMeta m = i.getItemMeta(); if (m == null) return i;
         m.displayName((def != null ? DCTagRenderer.component(def, System.currentTimeMillis()) : Component.text(tag.text())).decoration(TextDecoration.ITALIC, false));
         m.lore(List.of(MINI.deserialize("<yellow>左键编辑"), MINI.deserialize("<red>右键删除")));
         i.setItemMeta(m); return i;

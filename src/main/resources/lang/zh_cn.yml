@@ -101,7 +101,6 @@
   gui-admin-edit: "<yellow>点击编辑</yellow>"
   gui-admin-del: "<red>点击删除</red>"
   gui-admin-panel: "<red>编辑面板</red>"
-  gui-admin-upload: "<gold>上传 tags.yml</gold>"
+  gui-admin-upload: "<gold>同步配置文件</gold>"
   gui-admin-check: "<gray>仅校验 tags.yml</gray>"
   gui-no-title-data: "<red>数据库中没有称号定义，请先在 tags.yml 配置后执行 /dctags upload</red>"
-

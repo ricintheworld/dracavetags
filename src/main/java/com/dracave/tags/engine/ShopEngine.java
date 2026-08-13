@@ -180,7 +180,7 @@ public final class ShopEngine {
                 }
                 boolean ok = provider.withdraw(playerId, amount);
                 if (!ok) {
-                    plugin.getLogger().warning("购买扣款失败（热重载后需重启服务器恢复经济插件连接）: player=" + playerId + " price=" + amount.toPlainString() + " balance=" + bal.toPlainString() + " provider=" + provider.type().id());
+                    plugin.getLogger().warning("购买扣款失败: player=" + playerId + " price=" + amount.toPlainString() + " balance=" + bal.toPlainString() + " provider=" + provider.type().id());
                 }
                 return ok ? ChargeResult.SUCCESS : ChargeResult.FAILED;
             }

@@ -4,6 +4,7 @@ import com.dracave.tags.DraCaveTags;
 import com.dracave.tags.config.GuiConfig.*;
 import com.dracave.tags.handlers.*;
 import com.dracave.tags.render.DCTagRenderer;
+import com.dracave.tags.util.ItemResolver;
 import com.dracave.tags.util.SchedulerUtil;
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.format.TextDecoration;
@@ -90,7 +91,7 @@ public final class ShopScreen implements ClickableScreen {
     }
 
     private ItemStack tagItem(DCTag tag) {
-        ItemStack i = new ItemStack(Material.NAME_TAG); ItemMeta m = i.getItemMeta(); if (m == null) return i;
+        ItemStack i = ItemResolver.resolve(tag.icon()); ItemMeta m = i.getItemMeta(); if (m == null) return i;
         m.displayName(DCTagRenderer.component(tag, System.currentTimeMillis()).decoration(TextDecoration.ITALIC, false));
         List<Component> l = new ArrayList<>();
         for (String d : tag.description()) l.add(MINI.deserialize(d));

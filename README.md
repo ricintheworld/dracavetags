@@ -40,6 +40,8 @@ DraCaveTags 是一款支持 **Paper 系服务端**的动态称号插件，将「
     在聊天 / TAB 配置中使用 `%dracavetags_title%` 等变量放置称号
 3.  **上传称号**
     加载插件后，管理员执行 `/dct upload all` 或打开管理 GUI 上传称号
+4.  **开始使用**
+    玩家只需输入 `/dct` 打开主菜单，仓库、商店、自定义称号和奖励都可直接进入
 
 ---
 
@@ -70,64 +72,73 @@ DraCaveTags 是一款支持 **Paper 系服务端**的动态称号插件，将「
 
 ### 玩家命令
 
+> 不带子命令时直接打开称号主菜单；原有 `/dct open` 仍用于快速进入仓库。
+
 | 命令 | 说明 |
 | :--- | :--- |
+| `/dct` / `/dct menu` | 打开称号主菜单（推荐入口） |
 | `/dct help` | 查看帮助 |
-| `/dct open` | 打开称号仓库 |
+| `/dct open [玩家]` | 打开称号仓库（管理员可指定玩家） |
 | `/dct shop` | 打开称号商店 |
-| `/dct list` | 列出所有称号 |
+| `/dct list`（`listTitle` 同效） | 列出所有称号 |
 | `/dct wear <ID>` | 穿戴称号 |
 | `/dct wear none` / `/dct clear` | 卸下称号 |
 | `/dct custom` | 打开自定义称号 GUI |
 | `/dct custom <名称>` | 快速创建静态自定义称号 |
-| `/dct custom create <类型> <参数>` | 创建自定义称号 |
+| `/dct custom create <类型> <参数>` | 创建自定义称号（类型：static / gradient / rainbow / flash / frames） |
 | `/dct custom edit <ID> <类型> <参数>` | 编辑自定义称号 |
 | `/dct custom delete <ID>` | 删除自定义称号 |
-| `/dct view [玩家]` | 查看自己/他人称号列表 |
+| `/dct view [类型] [玩家]` | 查看称号列表（类型填 `shop` / `reward`；指定玩家需管理员权限） |
 | `/dct reward` | 打开奖励中心 |
 | `/dct ranking` | 称号数量排行榜 |
+| `/dct menu <菜单名>` | 打开 `gui/*.yml` 中配置的自定义菜单 |
 
 ### 管理员命令
 
+> 货币类型统一为 `vault` / `playerpoints` / `coin` / `item`（奖励类不含 `item`）。
+
 | 命令 | 说明 |
 | :--- | :--- |
-| `/dct add <货币> <名称> <价格> [天数] [隐藏] [玩家]` | 创建称号 |
+| `/dct add <货币> <名称> <价格> [天数] [隐藏 true\|false] [玩家]` | 创建称号（价格 0 = 不上架；天数 0 = 永久；可同时赠送） |
+| `/dct create <文本> <颜色 #或逗号hex> <购买方式> <价格> [物品]>` | 创建称号并直接写入 tags.yml |
 | `/dct del <ID>` | 删除称号 |
 | `/dct set <玩家> <ID> [天数]` | 设置并强制穿戴 |
-| `/dct addPlayerTitle <玩家> <ID> [天数]` | 发放称号 |
-| `/dct setDescription <ID> <描述>` | 设置描述 |
-| `/dct addPermission <ID> <权限>` | 设置购买权限 |
-| `/dct setTitleBuff <ID> <效果> [等级]` | 添加药水效果 |
-| `/dct delBuff <ID> <效果>` | 移除药水效果 |
-| `/dct setTitleParticle <ID> <粒子> [id] [颜色]` | 设置粒子 |
+| `/dct addPlayerTitle <玩家> <名称或ID> [天数]` | 发放称号 |
+| `/dct setDescription <ID> <描述>` | 设置描述（支持 MiniMessage，换行用 `\n`） |
+| `/dct addPermission <ID> <权限>` | 设置购买权限（`none` 清除） |
+| `/dct setTitleBuff <ID> POTION_EFFECT <效果名> [等级]` | 添加药水效果 |
+| `/dct delBuff <ID> <效果名>` | 移除药水效果 |
+| `/dct setTitleParticle <ID> <粒子类型> [粒子id] (颜色)…` | 设置粒子（颜色最多 3 个 #RRGGBB） |
 | `/dct removeTitleParticle <ID>` | 移除粒子 |
 | `/dct addCoin <玩家> <金额>` | 增加称号币 |
 | `/dct subtractCoin <玩家> <金额>` | 扣除称号币 |
 | `/dct setCustom <玩家> <次数>` | 设置自定义额度 |
 | `/dct addCustom <玩家> <次数>` | 追加自定义额度 |
-| `/dct addReward <数量> <货币> <金额>` | 配置里程碑奖励 |
-| `/dct randomCard <货币> <天数>` | 生成随机称号卡 |
+| `/dct addReward <数量> <类型 vault\|playerpoints\|coin> <金额>` | 配置里程碑奖励 |
+| `/dct randomCard <货币 vault\|playerpoints\|coin\|item> <天数>` | 生成随机称号卡 |
 | `/dct changeItem <ID> <天数> <数量> [玩家]` | 称号转物品卡 |
 | `/dct adminShop` | 称号管理商店 GUI |
-| `/dct panel` / `/dct panel-id <ID>` | 按名称/ID 打开管理面板 |
+| `/dct panel <称号文本>` / `/dct panel-id <ID>` | 按名称/ID 打开管理面板 |
 | `/dct panel-edit <ID> text <新文本>` | 命令行改文本 |
 | `/dct panel-edit <ID> price <金额\|none>` | 命令行改价格 |
-| `/dct upload all` | 上传 tags.yml 到数据库 |
+| `/dct upload all [--check]` | 校验并同步 tags.yml 到数据库（`--check` 仅校验） |
 | `/dct upload data` | 从数据库同步到 tags.yml |
-| `/dct upload all --check` | 仅校验 tags.yml |
-| `/dct convert <MYSQL\|SQLITE>` | 转换存储类型 |
 | `/dct reload` | 重载配置 |
+
+> 命令支持中文 Tab 提示。选择类似 `vault（Vault金币）`、`0（不上架，仅创建或发放）` 的补全项后可直接执行，插件会自动识别括号内说明。
 
 ### 🔄 数据迁移命令（/ttt）
 
+> 需要权限 `dracave.tags.migrate` 或 `ttt.use`。`[源库]` 为 PlayerTitle 数据库路径，默认 `plugins/PlayerTitle/PlayerTitle.db`。
+
 | 命令 | 说明 |
 | :--- | :--- |
-| `/ttt title null [源库]` | 静态迁移 PlayerTitle 称号 |
-| `/ttt title color [源库]` | 动态迁移 PlayerTitle 称号 |
-| `/ttt db [源库]` | 迁移 PlayerTitle 玩家数据 |
+| `/ttt title null [源库]` | 静态迁移 PlayerTitle 称号（渐变/粗体/乱码直写数据库） |
+| `/ttt title color [源库]`（`dynamic` 同效） | 动态渐变迁移 PlayerTitle 称号（生成 tags.yml 后可 upload） |
+| `/ttt db [源库]` | 迁移 PlayerTitle 玩家数据（UUID 本地获取，不联网） |
 | `/ttt old --check` | 检查旧版 DraCaveTitle 1.1.4 数据 |
 | `/ttt old db` | 迁移旧版玩家数据 |
-| `/ttt old title` | 迁移旧版称号定义 |
+| `/ttt old title [--db]` | 迁移旧版称号定义（`--db` 从数据库提取，否则复制 titles.yml） |
 
 ---
 
@@ -155,7 +166,7 @@ DraCaveTags 是一款支持 **Paper 系服务端**的动态称号插件，将「
 
 ## 🏷️ 变量一览
 
-> 需安装 PlaceholderAPI
+> 需安装 PlaceholderAPI，变量前缀 `dracavetags_`。未穿戴称号时返回配置项 `chat.default-title`（为空则返回空串）。
 
 | 变量 | 说明 |
 | :--- | :--- |
@@ -166,7 +177,6 @@ DraCaveTags 是一款支持 **Paper 系服务端**的动态称号插件，将「
 | `%dracavetags_title_id%` | 当前称号 ID |
 | `%dracavetags_title_yesno%` | 是否穿戴称号 true/false |
 | `%dracavetags_coin%` | 称号币余额 |
-| `%dracavetags_coin_raw%` | 称号币余额（纯数字） |
 
 ---
 

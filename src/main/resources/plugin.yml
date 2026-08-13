@@ -15,9 +15,9 @@ libraries:
   - com.h2database:h2:2.1.214
 commands:
   dracavetags:
-    description: 称号插件主命令
+    description: 打开称号主菜单并管理称号
     aliases: [ dctags, dct, dracavetags, tags ]
-    usage: "/dctags help"
+    usage: "/dctags [open|shop|custom|reward|help]"
   ttt:
     description: 旧数据迁移（PlayerTitle / DraCaveTitle → DraCaveTags）
     usage: "/ttt title <null|color> | /ttt db [源库] | /ttt old <--check|db|title>"

@@ -11,4 +11,6 @@ public interface EcoProvider {
     BigDecimal balance(UUID playerId);
     boolean withdraw(UUID playerId, BigDecimal amount);
     boolean refund(UUID playerId, BigDecimal amount);
+    /** 重新探测经济插件引用，用于热重载后重连。 */
+    default void refresh() {}
 }

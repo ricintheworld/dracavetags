@@ -42,7 +42,6 @@ public final class DCTagRegistry {
         this.configured = Map.copyOf(loaded);
         plugin.getLogger().info("已从数据库加载 " + this.configured.size() + " 个全局称号及 "
                 + this.runtime.size() + " 个运行时称号");
-        plugin.getLogger().warning("热重载可能导致经济插件连接异常，若购买扣款失败请重启服务器");
     }
 
     public DCTag get(String id) {

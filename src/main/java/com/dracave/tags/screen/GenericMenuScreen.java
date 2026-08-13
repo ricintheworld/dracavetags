@@ -81,14 +81,17 @@ public final class GenericMenuScreen implements ClickableScreen {
 
     @Override
     public void click(int rawSlot, ClickType clickType) {
+        IconAction action = switch (clickType) {
+            case RIGHT -> rightActions.getOrDefault(rawSlot, leftActions.getOrDefault(rawSlot, IconAction.NONE));
+            case SHIFT_LEFT -> shiftLeftActions.getOrDefault(rawSlot, leftActions.getOrDefault(rawSlot, IconAction.NONE));
+            default -> leftActions.getOrDefault(rawSlot, IconAction.NONE);
+        };
+        if (action == IconAction.NONE) {
+            return;
+        }
         if (plugin.screenSound() != null) {
             plugin.screenSound().click(player);
         }
-        IconAction action = switch (clickType) {
-            case RIGHT -> rightActions.getOrDefault(rawSlot, IconAction.NONE);
-            case SHIFT_LEFT -> shiftLeftActions.getOrDefault(rawSlot, IconAction.NONE);
-            default -> leftActions.getOrDefault(rawSlot, IconAction.NONE);
-        };
         dispatch(action);
     }
 

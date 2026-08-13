@@ -6,7 +6,7 @@ inventory:
   - '称称称称称称称称称'
   - '称称称称称称称称称'
   - '称称称称称称称称称'
-  - '上空空传创检空返下'
+  - '上空空同创空空返下'
 icons:
   称:
     material: NAME_TAG
@@ -30,9 +30,12 @@ icons:
     display: '<yellow>下一页'
     left:
       - 'page next'
-  传:
+  同:
     material: WRITABLE_BOOK
-    display: '<gold>上传 tags.yml'
+    display: '<gold>同步配置文件'
+    lore:
+      - '<gray>校验并同步 tags.yml 到数据库'
+      - '<gray>配置有误时不会修改现有称号'
     left:
       - 'command dctags upload all'
   创:
@@ -43,11 +46,6 @@ icons:
       - '<gray>并打开管理面板'
     left:
       - 'create'
-  检:
-    material: BOOK
-    display: '<gray>校验 tags.yml'
-    left:
-      - 'command dctags upload all --check'
   返:
     material: OAK_DOOR
     display: '<yellow>返回主菜单'

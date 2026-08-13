@@ -54,6 +54,13 @@ public final class PotionPickerScreen implements ClickableScreen {
             {"BAD_OMEN", "不祥之兆", "OMINOUS_BOTTLE"},
             {"HERO_OF_THE_VILLAGE", "村庄英雄", "EMERALD"},
             {"DARKNESS", "黑暗", "SCULK_CATALYST"},
+            {"BREATH_OF_THE_NAUTILUS", "鹦鹉螺之息", "NAUTILUS_SHELL"},
+            {"TRIAL_OMEN", "试炼之兆", "TRIAL_KEY"},
+            {"RAID_OMEN", "袭击之兆", "OMINOUS_BOTTLE"},
+            {"WIND_CHARGED", "风充能", "WIND_CHARGE"},
+            {"WEAVING", "盘绕", "COBWEB"},
+            {"OOZING", "渗浆", "SLIME_BALL"},
+            {"INFESTED", "寄生", "INFESTED_STONE"},
     };
 
     private static final int SLOTS_PER_PAGE = 45;

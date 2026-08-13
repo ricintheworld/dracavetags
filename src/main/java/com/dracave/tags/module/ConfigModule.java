@@ -11,8 +11,11 @@ import com.dracave.tags.engine.ChatPrompt;
 import com.dracave.tags.render.DCTagRenderer;
 import com.dracave.tags.screen.ScreenSound;
 import org.jetbrains.annotations.NotNull;
+import org.bukkit.configuration.file.YamlConfiguration;
 
 import java.io.File;
+import java.io.IOException;
+import java.util.List;
 
 /**
  * 配置模块。负责加载 config.yml、tags.yml、gui/ 目录、消息本地化、
@@ -37,6 +40,7 @@ public final class ConfigModule implements Module {
             plugin.saveResource("tags.yml", false);
         }
         saveGuiFiles(plugin);
+        migrateLegacyAdminMenu(plugin);
         File tagsDir = new File(plugin.getDataFolder(), "tags");
         if (!tagsDir.exists()) {
             tagsDir.mkdirs();
@@ -86,6 +90,36 @@ public final class ConfigModule implements Module {
             for (String name : new String[]{"main.yml", "self.yml", "shop.yml", "custom.yml", "admin.yml", "reward.yml"}) {
                 plugin.saveResource("gui/" + name, false);
             }
+        }
+    }
+
+    private void migrateLegacyAdminMenu(DraCaveTags plugin) {
+        File file = new File(plugin.getDataFolder(), "gui" + File.separator + "admin.yml");
+        if (!file.isFile()) {
+            return;
+        }
+        YamlConfiguration yaml = YamlConfiguration.loadConfiguration(file);
+        List<String> inventory = yaml.getStringList("inventory");
+        if (!inventory.contains("上空空传创检空返下")
+                || !"<gold>上传 tags.yml".equals(yaml.getString("icons.传.display"))
+                || !"<gray>校验 tags.yml".equals(yaml.getString("icons.检.display"))) {
+            return;
+        }
+        inventory.replaceAll(row -> row.equals("上空空传创检空返下") ? "上空空同创空空返下" : row);
+        yaml.set("inventory", inventory);
+        yaml.set("icons.传", null);
+        yaml.set("icons.检", null);
+        yaml.set("icons.同.material", "WRITABLE_BOOK");
+        yaml.set("icons.同.display", "<gold>同步配置文件");
+        yaml.set("icons.同.lore", List.of(
+                "<gray>校验并同步 tags.yml 到数据库",
+                "<gray>配置有误时不会修改现有称号"));
+        yaml.set("icons.同.left", List.of("command dctags upload all"));
+        try {
+            yaml.save(file);
+            plugin.getLogger().info("已将管理菜单的上传/校验按钮合并为同步配置文件");
+        } catch (IOException ex) {
+            plugin.getLogger().warning("升级管理菜单失败: " + ex.getMessage());
         }
     }
 }

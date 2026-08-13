@@ -4,6 +4,7 @@ import com.dracave.tags.DraCaveTags;
 import com.dracave.tags.config.GuiConfig.*;
 import com.dracave.tags.handlers.*;
 import com.dracave.tags.render.DCTagRenderer;
+import com.dracave.tags.util.ItemResolver;
 import com.dracave.tags.util.SchedulerUtil;
 import com.dracave.tags.panel.AdminConsole;
 import net.kyori.adventure.text.Component;
@@ -66,7 +67,7 @@ public final class AdminScreen implements ClickableScreen {
     }
 
     private ItemStack tagItem(DCTag tag) {
-        ItemStack i = new ItemStack(Material.NAME_TAG); ItemMeta m = i.getItemMeta(); if (m == null) return i;
+        ItemStack i = ItemResolver.resolve(tag.icon()); ItemMeta m = i.getItemMeta(); if (m == null) return i;
         m.displayName(DCTagRenderer.component(tag, System.currentTimeMillis()).decoration(TextDecoration.ITALIC, false));
         List<Component> l = new ArrayList<>();
         DCTagOffer o = tag.purchaseOffer();
@@ -82,7 +83,15 @@ public final class AdminScreen implements ClickableScreen {
             case OPEN_MAIN_MENU -> {close(); new MainScreen(plugin, player).open();}
             case PAGE_PREV -> {close(); new AdminScreen(plugin, player, page - 1).open();}
             case PAGE_NEXT -> {close(); new AdminScreen(plugin, player, page + 1).open();}
-            case COMMAND_UPLOAD -> plugin.defEngine().upload().thenAccept(r -> SchedulerUtil.runTask(plugin, () -> { player.sendMessage("\u00a7a上传: " + r.inserted() + " \u79f0\u53f7"); open(); }));
+            case COMMAND_UPLOAD -> plugin.defEngine().upload().thenAccept(r -> SchedulerUtil.runTask(plugin, () -> {
+                if (r.valid()) {
+                    player.sendMessage("§a配置同步完成：新增 " + r.inserted() + " 个，更新 " + r.updated() + " 个，共 " + r.count() + " 个称号。");
+                } else {
+                    player.sendMessage("§c配置同步失败，数据库未修改：");
+                    r.errors().forEach(error -> player.sendMessage("§c- " + error));
+                }
+                open();
+            }));
             case COMMAND_CHECK -> plugin.defEngine().checkUpload().thenAccept(r -> SchedulerUtil.runTask(plugin, () -> {
                 player.sendMessage("\u00a7a\u6821\u9a8c: " + r.count() + " \u4e2a\u79f0\u53f7");
                 if (r.errors().isEmpty()) player.sendMessage("\u00a7a\u2713 \u5168\u90e8\u901a\u8fc7");

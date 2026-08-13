@@ -34,6 +34,7 @@ import net.kyori.adventure.text.minimessage.MiniMessage;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.OfflinePlayer;
+import org.bukkit.Particle;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -65,13 +66,13 @@ public final class DCTagCommand implements CommandExecutor, TabCompleter {
 
     @Override
     public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, String[] args) {
+        args = CommandHints.normalize(args);
         if (plugin.tagEngine() == null) {
             plugin.messages().send(sender, "unavailable");
             return true;
         }
-        String sub = args.length == 0 ? "open" : args[0].toLowerCase(java.util.Locale.ROOT);
-        boolean playerCommand = sub.equals("open") || sub.equals("shop") || sub.equals("custom") || sub.equals("view")
-                || sub.equals("wear") || sub.equals("clear") || sub.equals("reward") || sub.equals("ranking") || sub.equals("menu");
+        String sub = CommandRouting.resolve(args);
+        boolean playerCommand = CommandRouting.isPlayerCommand(sub);
         if (!playerCommand && !sender.hasPermission("dracave.tags.admin")) {
             plugin.messages().send(sender, "no-permission");
             return true;
@@ -116,6 +117,7 @@ public final class DCTagCommand implements CommandExecutor, TabCompleter {
                 case "panel-id" -> panel(sender, args, true);
                 case "panel-edit" -> panelEdit(sender, args);
                 case "menu" -> menu(sender, args);
+                case "main", "home" -> mainMenu(sender);
                 case "help" -> help(sender);
                 default -> help(sender);
             }
@@ -137,6 +139,10 @@ public final class DCTagCommand implements CommandExecutor, TabCompleter {
             return;
         }
         requirePlayer(sender, p -> new VaultScreen(plugin, p, 0).open());
+    }
+
+    private void mainMenu(CommandSender sender) {
+        requirePlayer(sender, p -> new MainScreen(plugin, p).open());
     }
 
     private void shop(CommandSender sender) {
@@ -403,6 +409,7 @@ public final class DCTagCommand implements CommandExecutor, TabCompleter {
     private void add(CommandSender sender, String[] args) {
         if (args.length < 4) {
             sender.sendMessage("§e用法：/dctags add <货币类型 vault|playerpoints|coin|item> <称号名称> <价格> [天数] [隐藏 true|false] [玩家名]");
+            sender.sendMessage("§7价格填 0 表示不上架，仅创建称号；天数填 0 表示永久。");
             sender.sendMessage("§7物品购买（item）：手持支付物执行命令，价格 = 所需数量");
             return;
         }
@@ -413,8 +420,20 @@ public final class DCTagCommand implements CommandExecutor, TabCompleter {
             sender.sendMessage("§c未知货币类型：" + args[1]);
             return;
         }
+        String name = args[2];
+        BigDecimal price;
+        try {
+            price = new BigDecimal(args[3]);
+        } catch (NumberFormatException ex) {
+            sender.sendMessage("§c价格不是合法数字。");
+            return;
+        }
+        if (price.signum() < 0) {
+            sender.sendMessage("§c价格不能小于 0；填 0 表示不上架。");
+            return;
+        }
         final String itemMaterial;
-        if (currency == EcoType.ITEM) {
+        if (currency == EcoType.ITEM && price.signum() > 0) {
             if (!(sender instanceof Player player)) {
                 sender.sendMessage("§c物品购买需要在游戏内执行（使用主手物品作为支付物）。");
                 return;
@@ -428,70 +447,84 @@ public final class DCTagCommand implements CommandExecutor, TabCompleter {
         } else {
             itemMaterial = null;
         }
-        String name = args[2];
-        BigDecimal price;
-        try {
-            price = new BigDecimal(args[3]);
-        } catch (NumberFormatException ex) {
-            sender.sendMessage("§c价格不是合法数字。");
+        int days = args.length >= 5 ? parseInt(args[4], 0) : 0;
+        if (days < 0) {
+            sender.sendMessage("§c天数不能小于 0；填 0 表示永久。");
             return;
         }
-        int days = args.length >= 5 ? parseInt(args[4], 0) : 0;
         boolean hidden = args.length >= 6 && Boolean.parseBoolean(args[5]);
-        DCTagOffer offer = currency == EcoType.ITEM
+        DCTagOffer offer = price.signum() == 0 ? null : currency == EcoType.ITEM
                 ? new DCTagOffer(EcoType.ITEM, price, itemMaterial)
                 : new DCTagOffer(currency, price);
+        boolean shopHidden = offer == null || hidden;
+        String targetPlayer = args.length >= 7 ? args[6] : null;
         SchedulerUtil.runTaskAsynchronously(plugin, () -> {
             try {
                 DCTag definition = new DCTag(
                         generateId(name), mini.escapeTags(name), List.of("<gray>通过 /dctags add 创建"),
                         "NAME_TAG", 0, false, "", new DCTagAnim(List.of("#7AFBFF", "#B97AFF"), 40),
-                        offer, List.of("#7AFBFF", "#B97AFF"), hidden, List.of(), null, 0);
+                        offer, List.of("#7AFBFF", "#B97AFF"), shopHidden, List.of(), null, 0);
                 plugin.defStore().upsertAll(List.of(definition));
                 plugin.defEngine().reload().thenRun(() -> {
-                    String priceDisplay = currency == EcoType.ITEM
+                    String priceDisplay = offer == null ? "不上架" : currency == EcoType.ITEM
                             ? price.toPlainString() + " × " + itemMaterial
                             : price + " " + currency.id();
                     sender.sendMessage("§a已创建称号 §f" + name + " §a(ID: " + definition.id() + "，价格：" + priceDisplay + ")。");
+                    if (targetPlayer != null) {
+                        grantToPlayer(sender, targetPlayer, definition.id(), days, true);
+                    }
+                }).exceptionally(error -> {
+                    plugin.getLogger().severe("刷新新称号失败: " + error.getMessage());
+                    plugin.messages().send(sender, "operation-failed");
+                    return null;
                 });
-                if (args.length >= 7) {
-                    grantToPlayer(sender, args[6], definition.id(), days, true);
-                }
             } catch (Exception ex) {
                 plugin.getLogger().severe("创建称号失败: " + ex.getMessage());
-                plugin.messages().send(sender, "operation-failed");
+                SchedulerUtil.runTask(plugin, () -> sender.sendMessage("§c创建称号失败：" + ex.getMessage()));
             }
         });
     }
 
     private void create(CommandSender sender, String[] args) {
-        if (args.length < 5) {
-            sender.sendMessage("§e用法：/dctags create <称号文本> <颜色(#或逗号分隔hex色号)> <购买方式 vault|coin|point|item> <价格> [item物品]");
+        if (args.length < 6) {
+            sender.sendMessage("§e用法：/dctags create <称号文本> <颜色(#或hex逗号分隔)> <text|anime> <购买方式 vault|coin|point|item> <价格> [item物品]");
+            sender.sendMessage("§7text = 标题使用 MiniMessage 格式（静态），colors 留空");
+            sender.sendMessage("§7anime = 颜色写入 colors 列表，标题纯文本，动态渐变");
             return;
         }
         String rawText = args[1];
         String colorArg = args[2];
+        String modeArg = args[3].toLowerCase(java.util.Locale.ROOT);
+        boolean anime;
+        switch (modeArg) {
+            case "text" -> anime = false;
+            case "anime" -> anime = true;
+            default -> {
+                sender.sendMessage("§c模式必须是 text 或 anime：" + args[3]);
+                return;
+            }
+        }
         EcoType currency;
         try {
-            currency = EcoType.parse(args[3]);
+            currency = EcoType.parse(args[4]);
         } catch (IllegalArgumentException ex) {
-            sender.sendMessage("§c未知货币类型：" + args[3]);
+            sender.sendMessage("§c未知货币类型：" + args[4]);
             return;
         }
         BigDecimal price;
         try {
-            price = new BigDecimal(args[4]);
+            price = new BigDecimal(args[5]);
         } catch (NumberFormatException ex) {
             sender.sendMessage("§c价格不是合法数字。");
             return;
         }
         String itemMaterial = null;
         if (currency == EcoType.ITEM) {
-            if (args.length < 6) {
+            if (args.length < 7) {
                 sender.sendMessage("§c物品购买需要指定物品材质（如 minecraft:diamond）。");
                 return;
             }
-            itemMaterial = args[5];
+            itemMaterial = args[6];
             String lowerItem = itemMaterial.toLowerCase(java.util.Locale.ROOT);
             boolean isCustom = lowerItem.contains(":") && !lowerItem.startsWith("minecraft:");
             if (lowerItem.startsWith("minecraft:")) {
@@ -500,7 +533,7 @@ public final class DCTagCommand implements CommandExecutor, TabCompleter {
             if (!isCustom) {
                 itemMaterial = itemMaterial.toUpperCase(java.util.Locale.ROOT);
                 if (Material.matchMaterial(itemMaterial) == null) {
-                    sender.sendMessage("§c未知物品材质：" + args[5]);
+                    sender.sendMessage("§c未知物品材质：" + args[6]);
                     return;
                 }
             }
@@ -510,9 +543,13 @@ public final class DCTagCommand implements CommandExecutor, TabCompleter {
                 : new DCTagOffer(currency, price);
         java.util.List<String> colors = new java.util.ArrayList<>();
         String display;
-        if ("#".equals(colorArg)) {
+        DCTagAnim animation = null;
+        if (anime) {
             display = mini.escapeTags(rawText);
-        } else {
+            if ("#".equals(colorArg)) {
+                sender.sendMessage("§canime 模式必须指定至少 2 个颜色（如 #FF0000,#0000FF）。");
+                return;
+            }
             for (String part : colorArg.split(",")) {
                 String c = part.trim();
                 if (c.startsWith("#")) {
@@ -521,21 +558,43 @@ public final class DCTagCommand implements CommandExecutor, TabCompleter {
                     colors.add("#" + c);
                 }
             }
-            if (colors.isEmpty()) {
-                display = mini.escapeTags(rawText);
-            } else if (colors.size() >= 2) {
-                display = "<gradient:" + colors.get(0) + ":" + colors.get(colors.size() - 1) + ">"
-                        + mini.escapeTags(rawText) + "</gradient>";
+            if (colors.size() < 2) {
+                sender.sendMessage("§canime 模式需要至少 2 个颜色用于动态渐变。");
+                return;
+            }
+            animation = new DCTagAnim(colors, 40);
+        } else {
+            // text 模式：颜色直接作为 MiniMessage 标签写入 text，colors 留空，静态渲染
+            colors.clear();
+            if ("#".equals(colorArg)) {
+                display = rawText;
             } else {
-                display = "<" + colors.get(0) + ">" + mini.escapeTags(rawText) + "</" + colors.get(0) + ">";
+                java.util.List<String> parsedColors = new java.util.ArrayList<>();
+                for (String part : colorArg.split(",")) {
+                    String c = part.trim();
+                    if (c.startsWith("#")) {
+                        parsedColors.add(c);
+                    } else if (!c.isEmpty()) {
+                        parsedColors.add("#" + c);
+                    }
+                }
+                if (parsedColors.isEmpty()) {
+                    display = rawText;
+                } else if (parsedColors.size() >= 2) {
+                    display = "<gradient:" + parsedColors.get(0) + ":" + parsedColors.get(parsedColors.size() - 1) + ">"
+                            + rawText + "</gradient>";
+                } else {
+                    display = "<" + parsedColors.get(0) + ">" + rawText + "</" + parsedColors.get(0) + ">";
+                }
             }
         }
+        DCTagAnim finalAnimation = animation;
         String finalItemMaterial = itemMaterial;
         SchedulerUtil.runTaskAsynchronously(plugin, () -> {
             try {
                 DCTag definition = new DCTag(
                         generateId(rawText), display, java.util.List.of("<gray>通过 /dctags create 创建"),
-                        "NAME_TAG", 0, false, "", null,
+                        "NAME_TAG", 0, false, "", finalAnimation,
                         offer, colors, false, java.util.List.of(), null, 0);
                 java.io.File ymlFile = new java.io.File(plugin.getDataFolder(), "tags.yml");
                 com.dracave.tags.config.DCTagYamlLoader parser = new com.dracave.tags.config.DCTagYamlLoader();
@@ -792,6 +851,10 @@ public final class DCTagCommand implements CommandExecutor, TabCompleter {
 
     private void reload(CommandSender sender) {
         plugin.reloadFiles();
+        if (plugin.currencies() != null) {
+            plugin.currencies().refreshAll();
+            sender.sendMessage("§a经济插件已重新连接");
+        }
         plugin.defEngine().reload().thenRun(() -> {
             plugin.messages().send(sender, "reloaded");
         });
@@ -1213,8 +1276,7 @@ public final class DCTagCommand implements CommandExecutor, TabCompleter {
 
     private void menu(CommandSender sender, String[] args) {
         if (args.length < 2) {
-            sender.sendMessage("§eUsage: /dctags menu <name>");
-            sender.sendMessage("§7Available: " + String.join(", ", availableMenus()));
+            mainMenu(sender);
             return;
         }
         String key = args[1].toLowerCase(java.util.Locale.ROOT);
@@ -1233,6 +1295,7 @@ public final class DCTagCommand implements CommandExecutor, TabCompleter {
     private void help(CommandSender sender) {
         boolean admin = sender.hasPermission("dracave.tags.admin");
         sender.sendMessage("§e§m-------------§f[§eDraCaveTags§f]§e§m-------------");
+        sender.sendMessage("§e/dctags §f打开称号主菜单");
         sender.sendMessage("§e/dctags open §f打开称号仓库");
         sender.sendMessage("§e/dctags shop §f打开称号商店");
         sender.sendMessage("§e/dctags custom [称号名称] §f自定义称号");
@@ -1328,22 +1391,38 @@ public final class DCTagCommand implements CommandExecutor, TabCompleter {
             return List.of();
         }
         if (args.length == 1) {
-            List<String> values = new ArrayList<>(List.of("open", "shop", "custom", "wear", "clear", "view", "reward", "ranking", "menu"));
+            List<String> values = new ArrayList<>(List.of(
+                    hint("menu", "打开指定菜单"), hint("main", "打开主菜单"), hint("home", "打开主菜单"),
+                    hint("open", "打开称号仓库"), hint("shop", "打开称号商店"),
+                    hint("custom", "自定义称号"), hint("wear", "穿戴或卸下称号"), hint("clear", "卸下当前称号"),
+                    hint("view", "查看称号列表"), hint("reward", "打开奖励中心"), hint("ranking", "查看称号排行榜"),
+                    hint("help", "查看帮助")
+            ));
             if (sender.hasPermission("dracave.tags.admin")) {
-                values.addAll(List.of("listTitle", "adminShop", "add", "create", "del", "set", "addPlayerTitle", "addCoin",
-                        "subtractCoin", "changeItem", "addReward", "randomCard", "setCustom", "addCustom",
-                        "setDescription", "addPermission", "setTitleBuff", "delBuff", "setTitleParticle",
-                        "removeTitleParticle", "reload", "panel", "panel-id", "panel-edit", "upload"));
+                values.addAll(List.of(
+                        hint("add", "快捷添加称号"), hint("create", "按颜色创建称号"), hint("del", "删除称号"),
+                        hint("set", "设置并穿戴称号"), hint("addPlayerTitle", "发放称号"),
+                        hint("adminShop", "打开管理面板"), hint("listTitle", "列出全部称号"),
+                        hint("addCoin", "增加称号币"), hint("subtractCoin", "扣除称号币"),
+                        hint("changeItem", "生成称号卡"), hint("addReward", "配置里程碑奖励"),
+                        hint("randomCard", "生成随机称号卡"), hint("setCustom", "设置自定义额度"),
+                        hint("addCustom", "追加自定义额度"), hint("setDescription", "设置称号描述"),
+                        hint("addPermission", "设置购买权限"), hint("setTitleBuff", "添加药水效果"),
+                        hint("delBuff", "删除药水效果"), hint("setTitleParticle", "设置粒子特效"),
+                        hint("removeTitleParticle", "移除粒子特效"), hint("panel", "按名称编辑称号"),
+                        hint("panel-id", "按ID编辑称号"), hint("panel-edit", "命令行编辑称号"),
+                        hint("upload", "同步称号数据"), hint("reload", "重载插件配置")
+                ));
             }
             return filter(values, args[0]);
         }
-        String sub = args[0].toLowerCase(java.util.Locale.ROOT);
+        String sub = CommandHints.strip(args[0]).toLowerCase(java.util.Locale.ROOT);
         switch (sub) {
             case "custom" -> {
                 if (args.length == 2) {
                     return filter(List.of("create", "edit", "delete"), args[1]);
                 }
-                String action = args[1].toLowerCase(java.util.Locale.ROOT);
+                String action = CommandHints.strip(args[1]).toLowerCase(java.util.Locale.ROOT);
                 if ((action.equals("create") || action.equals("edit")) && args.length == (action.equals("edit") ? 4 : 3)) {
                     return filter(customTypes(sender), args[args.length - 1]);
                 }
@@ -1369,49 +1448,52 @@ public final class DCTagCommand implements CommandExecutor, TabCompleter {
             }
             case "create" -> {
                 if (args.length == 2) {
-                    return filter(List.of("[称号文本]"), args[1]);
+                    return filter(List.of("[新建称号]"), args[1]);
                 }
                 if (args.length == 3) {
                     return filter(List.of("#", "#FF0000,#0000FF"), args[2]);
                 }
                 if (args.length == 4) {
-                    return filter(List.of("vault", "coin", "point", "item"), args[3]);
+                    return filter(List.of("text", "anime"), args[3]);
                 }
                 if (args.length == 5) {
-                    return filter(List.of("1000", "5000", "10000"), args[4]);
+                    return filter(currencyHints(), args[4]);
                 }
                 if (args.length == 6) {
+                    return filter(priceHints(false), args[5]);
+                }
+                if (args.length == 7) {
                     java.util.List<String> items = new java.util.ArrayList<>(
                     java.util.Arrays.stream(org.bukkit.Material.values()).filter(org.bukkit.Material::isItem)
                             .map(m -> "minecraft:" + m.name().toLowerCase(java.util.Locale.ROOT)).toList());
                     items.addAll(ItemResolver.allItemIds());
-                    return filter(items, args[5]);
+                    return filter(items, args[6]);
                 }
                 return List.of();
             }
             case "add" -> {
                 if (args.length == 2) {
-                    return filter(List.of("vault", "playerpoints", "coin", "item"), args[1]);
+                    return filter(currencyHints(), args[1]);
                 }
                 if (args.length == 3) {
-                    return filter(List.of("[称号名称]"), args[2]);
+                    return List.of();
                 }
                 if (args.length == 4) {
-                    return filter(List.of("1000", "5000", "10000"), args[3]);
+                    return filter(priceHints(true), args[3]);
                 }
                 if (args.length == 5) {
-                    return filter(List.of("0", "7", "30", "365"), args[4]);
+                    return filter(dayHints(), args[4]);
                 }
                 if (args.length == 6) {
-                    return filter(List.of("true", "false"), args[5]);
+                    return filter(List.of("false", "true"), args[5]);
                 }
                 if (args.length == 7) {
                     return filter(onlinePlayers(), args[6]);
                 }
                 return List.of();
             }
-            case "del", "set", "addplayertitle", "setdescription", "addpermission", "settitlebuff", "delbuff",
-                    "settitleparticle", "removetitleparticle", "changeitem" -> {
+            case "del", "set", "addplayertitle", "setdescription", "addpermission",
+                    "removetitleparticle", "changeitem" -> {
                 if (args.length == 2) {
                     if (sub.equals("set") || sub.equals("addplayertitle")) {
                         return filter(onlinePlayers(), args[1]);
@@ -1430,17 +1512,53 @@ public final class DCTagCommand implements CommandExecutor, TabCompleter {
                 if (args.length == 3 && (sub.equals("setdescription") || sub.equals("addpermission"))) {
                     return filter(List.of("[内容]"), args[2]);
                 }
-                if (args.length == 3 && sub.equals("settitlebuff")) {
-                    return filter(List.of("POTION_EFFECT"), args[2]);
-                }
-                if (args.length == 4 && sub.equals("settitlebuff")) {
-                    return filter(potionNames(), args[3]);
-                }
                 if (args.length == 3 && sub.equals("changeitem")) {
-                    return filter(List.of("0", "7", "30"), args[2]);
+                    return filter(dayHints(), args[2]);
                 }
                 if (args.length == 4 && sub.equals("changeitem")) {
                     return filter(List.of("1", "5", "10"), args[3]);
+                }
+                return List.of();
+            }
+            case "settitlebuff" -> {
+                if (args.length == 2) {
+                    return filter(tagIds(), args[1]);
+                }
+                if (args.length == 3) {
+                    return filter(List.of("POTION_EFFECT"), args[2]);
+                }
+                if (args.length == 4) {
+                    return filter(potionHints(), args[3]);
+                }
+                if (args.length == 5) {
+                    return filter(List.of("1", "2", "3"), args[4]);
+                }
+                return List.of();
+            }
+            case "delbuff" -> {
+                if (args.length == 2) {
+                    return filter(tagIds(), args[1]);
+                }
+                if (args.length == 3) {
+                    return filter(potionHints(), args[2]);
+                }
+                return List.of();
+            }
+            case "settitleparticle" -> {
+                if (args.length == 2) {
+                    return filter(tagIds(), args[1]);
+                }
+                if (args.length == 3) {
+                    return filter(particleHints(), args[2]);
+                }
+                if (args.length == 4) {
+                    if (args[3].startsWith("#")) {
+                        return filter(colorHints(), args[3]);
+                    }
+                    return filter(List.of(hint("none", "无粒子id，可留空")), args[3]);
+                }
+                if (args.length >= 5 && args.length <= 7) {
+                    return filter(colorHints(), args[args.length - 1]);
                 }
                 return List.of();
             }
@@ -1458,10 +1576,10 @@ public final class DCTagCommand implements CommandExecutor, TabCompleter {
             }
             case "randomcard", "addreward" -> {
                 if (args.length == 2) {
-                    return filter(List.of("vault", "playerpoints", "coin", "item"), args[1]);
+                    return filter(currencyHints(), args[1]);
                 }
                 if (args.length == 3) {
-                    return filter(List.of("0", "7", "30", "365"), args[2]);
+                    return filter(dayHints(), args[2]);
                 }
                 return List.of();
             }
@@ -1469,7 +1587,7 @@ public final class DCTagCommand implements CommandExecutor, TabCompleter {
                 if (args.length == 2) {
                     return filter(List.of("data", "all", "--check"), args[1]);
                 }
-                if (args.length == 3 && args[1].equalsIgnoreCase("all")) {
+                if (args.length == 3 && CommandHints.strip(args[1]).equalsIgnoreCase("all")) {
                     return filter(List.of("--check"), args[2]);
                 }
                 return List.of();
@@ -1516,10 +1634,218 @@ public final class DCTagCommand implements CommandExecutor, TabCompleter {
         return types.isEmpty() ? List.of("static", "gradient", "rainbow", "flash", "frames") : types;
     }
 
+    private static List<String> currencyHints() {
+        return List.of("vault", "playerpoints", "coin", "item");
+    }
+
+    private static List<String> priceHints(boolean allowUnlisted) {
+        List<String> prices = new ArrayList<>();
+        if (allowUnlisted) {
+            prices.add("0");
+        }
+        prices.add("1000");
+        prices.add("5000");
+        prices.add("10000");
+        return prices;
+    }
+
+    private static List<String> dayHints() {
+        return List.of("0", "7", "30", "365");
+    }
+
+    private static String hint(String value, String description) {
+        return CommandHints.hint(value, description);
+    }
+
     private boolean senderHasPermission(CommandSender sender, String permission) {
         return sender == null || sender.isOp() || sender.hasPermission(permission);
     }
 
+    private List<String> potionHints() {
+        List<String> result = new ArrayList<>();
+        for (PotionEffectType type : PotionEffectType.values()) {
+            if (type == null) continue;
+            String name = type.getName();
+            if (name == null) continue;
+            String cn = POTION_CN.getOrDefault(name.toUpperCase(java.util.Locale.ROOT), name);
+            result.add(hint(name, cn));
+        }
+        result.sort(String::compareTo);
+        return result;
+    }
+
+    private List<String> particleHints() {
+        List<String> result = new ArrayList<>();
+        for (Particle particle : Particle.values()) {
+            String name = particle.name();
+            String cn = PARTICLE_CN.getOrDefault(name, name);
+            result.add(hint(name, cn));
+        }
+        return result;
+    }
+
+    private static List<String> colorHints() {
+        return List.of(
+                hint("#FF0000", "红色"), hint("#00FF00", "绿色"), hint("#0000FF", "蓝色"),
+                hint("#FFFF00", "黄色"), hint("#FFFFFF", "白色"), hint("#000000", "黑色")
+        );
+    }
+
+    private static final java.util.Map<String, String> POTION_CN = java.util.Map.ofEntries(
+            java.util.Map.entry("SPEED", "速度"),
+            java.util.Map.entry("SLOWNESS", "缓慢"),
+            java.util.Map.entry("HASTE", "急迫"),
+            java.util.Map.entry("MINING_FATIGUE", "挖掘疲劳"),
+            java.util.Map.entry("STRENGTH", "力量"),
+            java.util.Map.entry("INSTANT_HEALTH", "瞬间治疗"),
+            java.util.Map.entry("INSTANT_DAMAGE", "瞬间伤害"),
+            java.util.Map.entry("JUMP_BOOST", "跳跃提升"),
+            java.util.Map.entry("NAUSEA", "反胃"),
+            java.util.Map.entry("REGENERATION", "生命恢复"),
+            java.util.Map.entry("RESISTANCE", "抗性提升"),
+            java.util.Map.entry("FIRE_RESISTANCE", "抗火"),
+            java.util.Map.entry("WATER_BREATHING", "水下呼吸"),
+            java.util.Map.entry("INVISIBILITY", "隐身"),
+            java.util.Map.entry("BLINDNESS", "失明"),
+            java.util.Map.entry("NIGHT_VISION", "夜视"),
+            java.util.Map.entry("HUNGER", "饥饿"),
+            java.util.Map.entry("WEAKNESS", "虚弱"),
+            java.util.Map.entry("POISON", "中毒"),
+            java.util.Map.entry("WITHER", "凋零"),
+            java.util.Map.entry("HEALTH_BOOST", "生命提升"),
+            java.util.Map.entry("ABSORPTION", "伤害吸收"),
+            java.util.Map.entry("SATURATION", "饱和"),
+            java.util.Map.entry("GLOWING", "发光"),
+            java.util.Map.entry("LEVITATION", "悬浮"),
+            java.util.Map.entry("LUCK", "幸运"),
+            java.util.Map.entry("UNLUCK", "霉运"),
+            java.util.Map.entry("SLOW_FALLING", "缓降"),
+            java.util.Map.entry("CONDUIT_POWER", "潮汐能量"),
+            java.util.Map.entry("DOLPHINS_GRACE", "海豚恩惠"),
+            java.util.Map.entry("BAD_OMEN", "不祥之兆"),
+            java.util.Map.entry("HERO_OF_THE_VILLAGE", "村庄英雄"),
+            java.util.Map.entry("TRIAL_OMEN", "试炼之兆"),
+            java.util.Map.entry("RAID_OMEN", "袭击之兆"),
+            java.util.Map.entry("WIND_CHARGED", "风充能"),
+            java.util.Map.entry("WEAVING", "盘绕"),
+            java.util.Map.entry("OOZING", "渗浆"),
+            java.util.Map.entry("INFESTED", "寄生"),
+            java.util.Map.entry("BREATH_OF_THE_NAUTILUS", "鹦鹉螺之息"),
+            java.util.Map.entry("DARKNESS", "黑暗")
+    );
+
+    private static final java.util.Map<String, String> PARTICLE_CN = java.util.Map.ofEntries(
+            java.util.Map.entry("DUST", "红石粉(可染色)"),
+            java.util.Map.entry("DUST_COLOR_TRANSITION", "颜色渐变(可染色)"),
+            java.util.Map.entry("DUST_PILLAR", "红石柱"),
+            java.util.Map.entry("FLAME", "火焰"),
+            java.util.Map.entry("TOTEM", "不死图腾"),
+            java.util.Map.entry("HEART", "爱心"),
+            java.util.Map.entry("END_ROD", "末地烛"),
+            java.util.Map.entry("FIREWORKS_SPARK", "烟花火星"),
+            java.util.Map.entry("CRIT", "暴击"),
+            java.util.Map.entry("ENCHANTED_HIT", "附魔击中"),
+            java.util.Map.entry("ENCHANT", "附魔"),
+            java.util.Map.entry("NOTE", "音符"),
+            java.util.Map.entry("PORTAL", "传送门"),
+            java.util.Map.entry("REVERSE_PORTAL", "反向传送门"),
+            java.util.Map.entry("SPIT", "喷吐"),
+            java.util.Map.entry("SQUID_INK", "墨汁"),
+            java.util.Map.entry("GLOW_SQUID_INK", "发光墨汁"),
+            java.util.Map.entry("GLOW", "荧光"),
+            java.util.Map.entry("HAPPY_VILLAGER", "开心村民"),
+            java.util.Map.entry("ANGRY_VILLAGER", "愤怒村民"),
+            java.util.Map.entry("SPELL", "法术"),
+            java.util.Map.entry("INSTANT_EFFECT", "瞬间效果"),
+            java.util.Map.entry("NAUTILUS", "鹦鹉螺"),
+            java.util.Map.entry("DOLPHIN", "海豚"),
+            java.util.Map.entry("DAMAGE_INDICATOR", "伤害指示器"),
+            java.util.Map.entry("SWEEP_ATTACK", "横扫"),
+            java.util.Map.entry("BARRIER", "屏障"),
+            java.util.Map.entry("LIGHT", "光"),
+            java.util.Map.entry("CLOUD", "云"),
+            java.util.Map.entry("SMOKE", "烟雾"),
+            java.util.Map.entry("LARGE_SMOKE", "大烟雾"),
+            java.util.Map.entry("CAMPFIRE_COSY_SMOKE", "篝火轻烟"),
+            java.util.Map.entry("CAMPFIRE_SIGNAL_SMOKE", "篝火信号烟"),
+            java.util.Map.entry("LAVA", "岩浆"),
+            java.util.Map.entry("DRAGON_BREATH", "龙息"),
+            java.util.Map.entry("EXPLOSION", "爆炸"),
+            java.util.Map.entry("EXPLOSION_EMITTER", "大型爆炸"),
+            java.util.Map.entry("FALLING_DUST", "掉落方块"),
+            java.util.Map.entry("SNOWFLAKE", "雪花"),
+            java.util.Map.entry("WATER_SPLASH", "水花"),
+            java.util.Map.entry("WATER_WAKE", "水波"),
+            java.util.Map.entry("WATER_BUBBLE", "水下气泡"),
+            java.util.Map.entry("BUBBLE_COLUMN_UP", "气泡柱上升"),
+            java.util.Map.entry("BUBBLE_POP", "气泡破裂"),
+            java.util.Map.entry("SNEEZE", "喷嚏"),
+            java.util.Map.entry("MILK", "牛奶"),
+            java.util.Map.entry("SONIC_BOOM", "音爆"),
+            java.util.Map.entry("SOUL", "灵魂"),
+            java.util.Map.entry("SOUL_FIRE_FLAME", "灵魂火焰"),
+            java.util.Map.entry("FLASH", "闪光"),
+            java.util.Map.entry("VIBRATION", "震动"),
+            java.util.Map.entry("SCULK_SOUL", "幽匿之魂"),
+            java.util.Map.entry("SCULK_CHARGE", "幽匿蔓延"),
+            java.util.Map.entry("SCULK_CHARGE_POP", "幽匿破裂"),
+            java.util.Map.entry("CHERRY_LEAVES", "樱花叶"),
+            java.util.Map.entry("PALE_OAK_LEAVES", "苍白橡叶"),
+            java.util.Map.entry("CRIMSON_SPORE", "绯红孢子"),
+            java.util.Map.entry("WARPED_SPORE", "诡异孢子"),
+            java.util.Map.entry("SPORE_BLOSSOM_AIR", "孢子花空气"),
+            java.util.Map.entry("FALLING_SPORE_BLOSSOM", "飘落孢子花"),
+            java.util.Map.entry("FALLING_NECTAR", "花蜜"),
+            java.util.Map.entry("ASH", "灰烬"),
+            java.util.Map.entry("WHITE_ASH", "白灰"),
+            java.util.Map.entry("ELECTRIC_SPARK", "电火花"),
+            java.util.Map.entry("WAX_OFF", "除蜡"),
+            java.util.Map.entry("WAX_ON", "打蜡"),
+            java.util.Map.entry("SCRAPE", "刮削"),
+            java.util.Map.entry("SMALL_FLAME", "小火焰"),
+            java.util.Map.entry("SMALL_GUST", "小风"),
+            java.util.Map.entry("GUST", "风"),
+            java.util.Map.entry("GUST_EMITTER", "大风"),
+            java.util.Map.entry("CURRENT_DOWN", "向下气流"),
+            java.util.Map.entry("TRIAL_OMEN", "试炼之兆"),
+            java.util.Map.entry("RAID_OMEN", "袭击之兆"),
+            java.util.Map.entry("VAULT", "宝库"),
+            java.util.Map.entry("ITEM", "物品"),
+            java.util.Map.entry("BLOCK", "方块"),
+            java.util.Map.entry("BLOCK_CRUMBLE", "方块崩塌"),
+            java.util.Map.entry("BLOCK_MARKER", "方块标记"),
+            java.util.Map.entry("BUBBLE", "气泡"),
+            java.util.Map.entry("COMPOSTER", "堆肥桶"),
+            java.util.Map.entry("COPPER_FIRE_FLAME", "铜制火焰"),
+            java.util.Map.entry("DRIPPING_DRIPSTONE_LAVA", "滴水石岩浆滴"),
+            java.util.Map.entry("DRIPPING_DRIPSTONE_WATER", "滴水石水滴"),
+            java.util.Map.entry("DRIPPING_HONEY", "蜂蜜滴"),
+            java.util.Map.entry("DRIPPING_LAVA", "岩浆滴"),
+            java.util.Map.entry("DRIPPING_OBSIDIAN_TEAR", "黑曜石泪滴"),
+            java.util.Map.entry("DRIPPING_WATER", "水滴"),
+            java.util.Map.entry("DUST_PLUME", "红石羽流"),
+            java.util.Map.entry("EGG_CRACK", "蛋破裂"),
+            java.util.Map.entry("ELDER_GUARDIAN", "远古守卫者"),
+            java.util.Map.entry("FALLING_HONEY", "飘落蜂蜜"),
+            java.util.Map.entry("FALLING_LAVA", "飘落岩浆"),
+            java.util.Map.entry("FALLING_OBSIDIAN_TEAR", "飘落黑曜石泪"),
+            java.util.Map.entry("FIREWORK", "烟花"),
+            java.util.Map.entry("LANDING_HONEY", "落地蜂蜜"),
+            java.util.Map.entry("LANDING_LAVA", "落地岩浆"),
+            java.util.Map.entry("LANDING_OBSIDIAN_TEAR", "落地黑曜石泪"),
+            java.util.Map.entry("MOB_APPEARANCE", "怪物出现"),
+            java.util.Map.entry("SHRIEK", "尖啸"),
+            java.util.Map.entry("TINTED_LEAVES", "遮光树叶"),
+            java.util.Map.entry("TOWN_AURA", "村庄光环"),
+            java.util.Map.entry("TRAIL", "轨迹"),
+            java.util.Map.entry("WHITE_SMOKE", "白烟"),
+            java.util.Map.entry("COBWEB", "蜘蛛网"),
+            java.util.Map.entry("GEYSER", "间歇泉"),
+            java.util.Map.entry("PALE_OAK", "苍白橡"),
+            java.util.Map.entry("CHERRY", "樱花"),
+            java.util.Map.entry("DEATH", "死亡"),
+            java.util.Map.entry("INFESTED", "寄生")
+    );
     private List<String> potionNames() {
         return Arrays.stream(PotionEffectType.values())
                 .filter(java.util.Objects::nonNull)
@@ -1551,7 +1877,7 @@ public final class DCTagCommand implements CommandExecutor, TabCompleter {
     private static List<String> filter(List<String> values, String input) {
         String prefix = input.toLowerCase(java.util.Locale.ROOT);
         return new LinkedHashSet<>(values).stream()
-                .filter(value -> value.toLowerCase(java.util.Locale.ROOT).startsWith(prefix))
+                .filter(value -> value.toLowerCase(java.util.Locale.ROOT).contains(prefix))
                 .sorted()
                 .toList();
     }

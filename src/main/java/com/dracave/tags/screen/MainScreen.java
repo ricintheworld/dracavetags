@@ -18,7 +18,9 @@ import java.util.*;
 public final class MainScreen implements ClickableScreen {
     private final DraCaveTags plugin;
     private final Player player;
-    private final Map<Integer, IconAction> actions = new HashMap<>();
+    private final Map<Integer, IconAction> leftActions = new HashMap<>();
+    private final Map<Integer, IconAction> rightActions = new HashMap<>();
+    private final Map<Integer, IconAction> shiftLeftActions = new HashMap<>();
     private final MenuDef menu;
     private Inventory inventory;
 
@@ -31,7 +33,9 @@ public final class MainScreen implements ClickableScreen {
     public void open() {
         String title = menu != null ? menu.title() : "";
         inventory = Bukkit.createInventory(this, menu != null ? menu.size() : 54, MiniMessage.miniMessage().deserialize(title));
-        actions.clear();
+        leftActions.clear();
+        rightActions.clear();
+        shiftLeftActions.clear();
         if (menu != null) {
             for (Map.Entry<Integer, IconDef> entry : menu.slots().entrySet()) {
                 int slot = entry.getKey(); IconDef icon = entry.getValue();
@@ -45,7 +49,9 @@ public final class MainScreen implements ClickableScreen {
                         item.setItemMeta(m);
                     }
                 }
-                if (icon.left() != IconAction.NONE) actions.put(slot, icon.left());
+                if (icon.left() != IconAction.NONE) leftActions.put(slot, icon.left());
+                if (icon.right() != IconAction.NONE) rightActions.put(slot, icon.right());
+                if (icon.shiftLeft() != IconAction.NONE) shiftLeftActions.put(slot, icon.shiftLeft());
             }
         }
         plugin.screenSound().open(player);
@@ -53,8 +59,16 @@ public final class MainScreen implements ClickableScreen {
     }
 
     @Override public void click(int rawSlot, ClickType clickType) {
+        IconAction action = switch (clickType) {
+            case RIGHT -> rightActions.getOrDefault(rawSlot, leftActions.getOrDefault(rawSlot, IconAction.NONE));
+            case SHIFT_LEFT -> shiftLeftActions.getOrDefault(rawSlot, leftActions.getOrDefault(rawSlot, IconAction.NONE));
+            default -> leftActions.getOrDefault(rawSlot, IconAction.NONE);
+        };
+        if (action == IconAction.NONE) {
+            return;
+        }
         plugin.screenSound().click(player);
-        switch (actions.getOrDefault(rawSlot, IconAction.NONE)) {
+        switch (action) {
             case OPEN_VAULT -> new VaultScreen(plugin, player, 0).open();
             case OPEN_SHOP -> new ShopScreen(plugin, player, 0).open();
             case OPEN_CUSTOM -> new CustomScreen(plugin, player, 0).open();

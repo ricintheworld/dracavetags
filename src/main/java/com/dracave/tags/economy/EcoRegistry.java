@@ -15,4 +15,11 @@ public final class EcoRegistry {
     public EcoProvider get(EcoType type) {
         return providers.get(type);
     }
+
+    /** 热重载后重新探测所有经济插件引用。 */
+    public void refreshAll() {
+        for (EcoProvider provider : providers.values()) {
+            try { provider.refresh(); } catch (Exception ignored) {}
+        }
+    }
 }
