@@ -56,8 +56,10 @@ public final class TagsExpansion extends PlaceholderExpansion {
 
     private String defaultTitle() {
         String raw = plugin.getConfig().getString("chat.default-title", "");
-        return raw.isEmpty() ? "" : "<gray>" + net.kyori.adventure.text.minimessage.MiniMessage.miniMessage()
-                .escapeTags(raw) + "</gray>";
+        if (raw.isEmpty()) return "";
+        // 支持 MiniMessage：若已含标签则原样交给渲染器解析，否则保留默认灰色
+        if (raw.indexOf('<') >= 0) return raw;
+        return "<gray>" + raw + "</gray>";
     }
 
     private String defaultLegacy(char code) {
