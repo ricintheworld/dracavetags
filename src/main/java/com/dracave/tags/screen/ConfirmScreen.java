@@ -254,7 +254,7 @@ public final class ConfirmScreen implements ClickableScreen {
     private String currencyDisplay() {
         DCTagOffer offer = tag.purchaseOffer();
         if (offer.currency() == com.dracave.tags.handlers.EcoType.ITEM) {
-            return offer.itemMaterial();
+            return ItemResolver.displayName(offer.itemMaterial());
         }
         return plugin.getConfig().getString("shop.currencies." + offer.currency().id() + ".display",
                 offer.currency().id());

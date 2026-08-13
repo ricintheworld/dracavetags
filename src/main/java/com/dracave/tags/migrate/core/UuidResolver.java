@@ -15,8 +15,11 @@ import java.util.regex.Pattern;
 
 public final class UuidResolver {
     public static final long PERPETUAL_THRESHOLD = 4_733_481_600_000L;
-    private static final Pattern JSON_ENTRY = Pattern.compile(
-            "\\{\\s*\"uuid\"\\s*:\\s*\"([0-9a-fA-F-]{36})\"\\s*,\\s*\"name\"\\s*:\\s*\"([^\"]+)\"");
+    // 支持两种顺序：usercache.json 是 name 在前，ops.json/whitelist.json 可能 uuid 在前
+    private static final Pattern JSON_ENTRY_UUID_FIRST = Pattern.compile(
+            "\\{[^{}]*\"uuid\"\\s*:\\s*\"([0-9a-fA-F-]{36})\"[^{}]*\"name\"\\s*:\\s*\"([^\"]+)\"");
+    private static final Pattern JSON_ENTRY_NAME_FIRST = Pattern.compile(
+            "\\{[^{}]*\"name\"\\s*:\\s*\"([^\"]+)\"[^{}]*\"uuid\"\\s*:\\s*\"([0-9a-fA-F-]{36})\"");
 
     private final Map<String, UUID> uuids = new HashMap<>();
 
@@ -65,6 +68,7 @@ public final class UuidResolver {
     }
 
     private static void loadJsonFiles(UuidResolver resolver, File serverFolder) {
+        java.util.logging.Logger log = java.util.logging.Logger.getLogger("DraCaveTags");
         for (String name : new String[]{"usercache.json", "whitelist.json", "ops.json", "banned-players.json"}) {
             File f = new File(serverFolder, name);
             if (!f.isFile()) {
@@ -72,15 +76,22 @@ public final class UuidResolver {
             }
             try {
                 String content = new String(Files.readAllBytes(f.toPath()), StandardCharsets.UTF_8);
-                Matcher m = JSON_ENTRY.matcher(content);
+                int before = resolver.size();
+                Matcher m = JSON_ENTRY_UUID_FIRST.matcher(content);
                 while (m.find()) {
                     resolver.add(m.group(2), m.group(1));
                 }
-            } catch (Exception ignored) {
+                m = JSON_ENTRY_NAME_FIRST.matcher(content);
+                while (m.find()) {
+                    resolver.add(m.group(1), m.group(2));
+                }
+                int added = resolver.size() - before;
+                log.info("[DraCaveTags 迁移] " + name + " 解析到 " + added + " 个玩家 UUID（累计 " + resolver.size() + "）");
+            } catch (Exception ex) {
+                log.warning("[DraCaveTags 迁移] 读取 " + name + " 失败: " + ex.getMessage());
             }
         }
     }
-
     private static void loadXConomy(UuidResolver resolver, File serverFolder) {
         File db = new File(serverFolder, "plugins/XConomy/playerdata/data.db");
         if (!db.isFile()) {

@@ -86,8 +86,21 @@ public final class MigrateCommand implements CommandExecutor, TabCompleter {
             return;
         }
         File serverFolder = plugin.getDataFolder().getParentFile().getParentFile();
+        // 子目录部署回溯：若当前推算的 serverFolder 没有 usercache.json，向上查找最多 4 层
+        serverFolder = locateServerRoot(serverFolder);
+        sender.sendMessage("§7服务器根目录: " + serverFolder.getAbsolutePath());
         UuidResolver resolver = new UuidResolver();
+        // 打印各 UUID 源的可用性
+        for (String f : new String[]{"usercache.json", "whitelist.json", "ops.json", "banned-players.json"}) {
+            File jf = new File(serverFolder, f);
+            sender.sendMessage("§7  " + f + ": " + (jf.isFile() ? "§a存在 (" + (jf.length() / 1024) + " KB)" : "§c不存在"));
+        }
+        File xconomy = new File(serverFolder, "plugins/XConomy/playerdata/data.db");
+        sender.sendMessage("§7  XConomy: " + (xconomy.isFile() ? "§a存在" : "§c不存在"));
+        File luckperms = new File(serverFolder, "plugins/LuckPerms");
+        sender.sendMessage("§7  LuckPerms: " + (luckperms.isDirectory() ? "§a存在" : "§c不存在"));
         UuidResolver.loadLocal(resolver, serverFolder);
+        sender.sendMessage("§7外部 UUID 源解析: " + resolver.size() + " 个玩家");
         if (scope == MigrateConfig.Scope.DATA && resolver.isEmpty()) {
             sender.sendMessage("§e外部 UUID 源不可用，将尝试从源库 player_uuid 列获取…");
         }
@@ -281,5 +294,29 @@ public final class MigrateCommand implements CommandExecutor, TabCompleter {
         if (prefix == null || prefix.isEmpty()) return options;
         String lower = prefix.toLowerCase(Locale.ROOT);
         return options.stream().filter(o -> o.toLowerCase(Locale.ROOT).startsWith(lower)).toList();
+    }
+
+    /**
+     * 定位真正的服务器根目录。标准部署下就是 plugins 的父目录；
+     * 某些子目录部署（如 server/Paper/plugins）需要向上回溯找到含 usercache.json 的目录。
+     */
+    private File locateServerRoot(File candidate) {
+        if (candidate == null) return new File(".");
+        // 若当前目录有 usercache.json 或 plugins 子目录，直接返回
+        if (new File(candidate, "usercache.json").isFile()
+                || new File(candidate, "plugins").isDirectory()) {
+            return candidate;
+        }
+        // 向上最多回溯 4 层
+        File parent = candidate;
+        for (int i = 0; i < 4 && parent != null; i++) {
+            parent = parent.getParentFile();
+            if (parent == null) break;
+            if (new File(parent, "usercache.json").isFile()
+                    || new File(parent, "plugins").isDirectory()) {
+                return parent;
+            }
+        }
+        return candidate;
     }
 }

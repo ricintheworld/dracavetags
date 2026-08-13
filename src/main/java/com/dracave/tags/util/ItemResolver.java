@@ -1,5 +1,8 @@
 package com.dracave.tags.util;
 
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.serializer.plain.PlainTextComponentSerializer;
+import net.kyori.adventure.translation.GlobalTranslator;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
@@ -9,6 +12,7 @@ import org.bukkit.plugin.Plugin;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
+import java.util.Locale;
 import java.util.UUID;
 
 public final class ItemResolver {
@@ -122,6 +126,22 @@ public final class ItemResolver {
             return !material.isAir();
         } catch (IllegalArgumentException ex) {
             return false;
+        }
+    }
+
+    /**
+     * 浠?Minecraft 璇█鏂囦欢鑾峰彇鐗╁搧鐨勬湰鍦板寲鍚嶇О锛堢畝浣撲腑鏂囷級銆?     * 鐢ㄤ簬鍟嗗簵鐣岄潰鏄剧ず ITEM 璐у竵鐨勪腑鏂囧悕锛堝 DIAMOND -> 閽荤煶锛夈€?     */
+    public static String displayName(String materialName) {
+        if (materialName == null || materialName.isBlank()) return materialName;
+        try {
+            Material mat = Material.matchMaterial(materialName);
+            if (mat == null || !mat.isItem()) return materialName;
+            Component source = Component.translatable(mat.translationKey());
+            Component rendered = GlobalTranslator.renderer().render(source, Locale.SIMPLIFIED_CHINESE);
+            String text = PlainTextComponentSerializer.plainText().serialize(rendered);
+            return text.isBlank() ? materialName : text;
+        } catch (Throwable ex) {
+            return materialName;
         }
     }
 

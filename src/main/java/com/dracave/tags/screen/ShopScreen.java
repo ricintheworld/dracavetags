@@ -98,11 +98,14 @@ public final class ShopScreen implements ClickableScreen {
         if (!l.isEmpty()) l.add(Component.empty());
         DCTagOffer o = tag.purchaseOffer();
         if (o != null && plugin.shopEngine().currencyAvailable(o)) {
+            String currencyName = o.currency() == EcoType.ITEM
+                    ? ItemResolver.displayName(o.itemMaterial())
+                    : o.currency().id();
             l.add(plugin.messages().component("gui-price", com.dracave.tags.config.Locale.text("price", o.price().toPlainString()),
-                    com.dracave.tags.config.Locale.parsed("currency", o.currency().id())));
+                    com.dracave.tags.config.Locale.parsed("currency", currencyName)));
             BigDecimal bal = plugin.shopEngine().balance(player.getUniqueId(), o);
             if (bal != null) l.add(plugin.messages().component("gui-balance", com.dracave.tags.config.Locale.text("balance", bal.setScale(2, java.math.RoundingMode.HALF_UP).toPlainString()),
-                    com.dracave.tags.config.Locale.parsed("currency", o.currency().id())));
+                    com.dracave.tags.config.Locale.parsed("currency", currencyName)));
             l.add(plugin.messages().component("gui-click-buy"));
         } else l.add(plugin.messages().component("gui-currency-unavailable"));
         if (!tag.permission().isEmpty()) l.add(plugin.messages().component("gui-permission-required", com.dracave.tags.config.Locale.text("permission", tag.permission())));
