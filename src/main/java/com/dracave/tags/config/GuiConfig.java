@@ -208,6 +208,7 @@ public final class GuiConfig {
                     case "admin-shop" -> IconAction.OPEN_ADMIN;
                     case "main-menu" -> IconAction.OPEN_MAIN_MENU;
                     case "ranking" -> IconAction.OPEN_RANKING;
+                    case "player-management" -> IconAction.OPEN_PLAYER_MANAGEMENT;
                     default -> IconAction.NONE;
                 };
             }
