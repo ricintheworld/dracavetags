@@ -6,7 +6,7 @@ inventory:
   - '称称称称称称称称称'
   - '称称称称称称称称称'
   - '称称称称称称称称称'
-  - '上空空同创空空返下'
+  - '上空空同创玩空返下'
 icons:
   称:
     material: NAME_TAG
@@ -51,3 +51,11 @@ icons:
     display: '<yellow>返回主菜单'
     left:
       - 'open main-menu'
+  玩:
+    material: PLAYER_HEAD
+    display: '<aqua>玩家称号管理'
+    lore:
+      - '<gray>管理在线玩家的称号'
+      - '<gray>发放称号 / 设置天数 / 聊天颜色'
+    left:
+      - 'open player-management'

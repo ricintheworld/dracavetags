@@ -167,6 +167,7 @@ public final class GuiConfig {
             case "admin-shop" -> new ParsedAction(IconAction.OPEN_ADMIN, null);
             case "main-menu" -> new ParsedAction(IconAction.OPEN_MAIN_MENU, null);
             case "ranking" -> new ParsedAction(IconAction.OPEN_RANKING, null);
+            case "player-management" -> new ParsedAction(IconAction.OPEN_PLAYER_MANAGEMENT, null);
             default -> new ParsedAction(IconAction.NONE, null);
         };
     }
@@ -240,6 +241,6 @@ public final class GuiConfig {
         NONE, OPEN_VAULT, OPEN_SHOP, OPEN_CUSTOM, OPEN_REWARD, OPEN_ADMIN,
         OPEN_MAIN_MENU, WEAR_TAG, BUY_TAG, EDIT_TAG, DELETE_TAG, EDIT_CUSTOM, DELETE_CUSTOM,
         CREATE_CUSTOM, CREATE, FILTER_ALL, FILTER_VAULT, FILTER_POINTS, FILTER_COIN, FILTER_ITEM,
-        PAGE_PREV, PAGE_NEXT, CLOSE, OPEN_RANKING, COMMAND_UPLOAD, COMMAND_CHECK
+        PAGE_PREV, PAGE_NEXT, CLOSE, OPEN_RANKING, COMMAND_UPLOAD, COMMAND_CHECK, OPEN_PLAYER_MANAGEMENT
     }
 }

@@ -59,7 +59,8 @@ public final class TitlesYmlWriter {
                 }
                 sb.append("]\n");
             }
-            sb.append("    icon: NAME_TAG\n");
+            String icon = t.icon() != null && !t.icon().isBlank() ? t.icon() : "NAME_TAG";
+            sb.append("    icon: ").append(icon).append('\n');
             sb.append("    order: ").append(t.id()).append('\n');
             sb.append("    default-unlocked: false\n");
             if (t.description() != null && !t.description().isBlank()) {

@@ -43,7 +43,11 @@ public final class CustomScreen implements ClickableScreen {
         inventory = Bukkit.createInventory(this, menu != null ? menu.size() : 54, MINI.deserialize(menu != null ? menu.title() : ""));
         actions.clear(); tagSlots.clear(); refreshCache.clear();
         fillStatic(owned.size());
-        for (int i = 0, s = 0; s < PAGE_SIZE && i < owned.size(); s++, i++) {
+        java.util.List<Integer> cslots = menu != null ? new ArrayList<>(menu.contentSlots()) : new ArrayList<>();
+        if (cslots.isEmpty()) { for (int i = 0; i < 54; i++) cslots.add(i); }
+        for (int i = 0; i < owned.size(); i++) {
+            if (i >= cslots.size()) break;
+            int s = cslots.get(i);
             tagSlots.put(s, owned.get(i)); inventory.setItem(s, tagItem(owned.get(i)));
         }
         plugin.screenSound().open(player); player.openInventory(inventory);
@@ -115,12 +119,20 @@ public final class CustomScreen implements ClickableScreen {
             case OPEN_VAULT -> {close(); new VaultScreen(plugin, player, 0).open();}
             case OPEN_SHOP -> {close(); new ShopScreen(plugin, player, 0).open();}
             case OPEN_MAIN_MENU -> {close(); new MainScreen(plugin, player).open();}
-            case CREATE_CUSTOM -> {close(); player.performCommand("dctags custom create");}
+            case CREATE_CUSTOM -> {
+                    int limit = plugin.customEngine().limit(player);
+                    int owned = plugin.customEngine().ownedBy(player.getUniqueId()).size();
+                    if (owned >= limit) {
+                        plugin.messages().send(player, "custom-quota-full");
+                        return;
+                    }
+                    close(); new CustomCreateScreen(plugin, player).open();
+                }
             case CLOSE -> player.closeInventory();
             default -> {
                 CustomDCTag t = tagSlots.get(rawSlot); if (t == null) return;
-                if (clickType == ClickType.RIGHT) { plugin.customEngine().delete(player, t.id()); player.closeInventory(); }
-                else { close(); new StyleScreen(plugin, player).open(); }
+                if (clickType == ClickType.RIGHT) { close(); new CustomDeleteConfirmScreen(plugin, player, t).open(); }
+                else { close(); new CustomCreateScreen(plugin, player, t).open(); }
             }
         }
     }

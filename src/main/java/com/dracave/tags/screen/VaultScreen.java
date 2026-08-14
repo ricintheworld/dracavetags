@@ -48,11 +48,12 @@ public final class VaultScreen implements ClickableScreen {
         inventory = Bukkit.createInventory(this, menu != null ? menu.size() : 54, MINI.deserialize(title));
         actions.clear(); tagSlots.clear(); refreshCache.clear();
         List<DCTag> tags = data.unlocked().stream().map(plugin.registry()::get).filter(Objects::nonNull)
+                .filter(t -> !t.id().startsWith("custom_"))
                 .sorted(Comparator.comparingInt(DCTag::order).thenComparing(DCTag::id)).toList();
         int pages = Math.max(1, (tags.size() + PAGE_SIZE - 1) / PAGE_SIZE);
         int from = Math.min(page, pages - 1) * PAGE_SIZE;
         int to = Math.min(tags.size(), from + PAGE_SIZE);
-        fillStatic(data.unlocked().size(), Math.min(page, pages - 1) + 1, pages);
+        fillStatic(tags.size(), Math.min(page, pages - 1) + 1, pages);
         java.util.List<Integer> cslots = menu != null ? new ArrayList<>(menu.contentSlots()) : new ArrayList<>();
         if (cslots.isEmpty()) { for (int i = 0; i < 54; i++) cslots.add(i); }
         for (int i = from; i < to; i++) {

@@ -2,7 +2,7 @@ package com.dracave.tags.migrate.core;
 
 public final class TitleData {
     public record SourceTitle(long id, String titleName, String buyType, long amount, int day,
-                              String itemStack, boolean isHide, String description) {
+                              String itemStack, boolean isHide, String description, String icon) {
     }
 
     public record OwnedTitle(long id, String playerName, String playerUuid, long titleId, String titleName,

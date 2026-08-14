@@ -25,6 +25,7 @@ public final class DbPool implements AutoCloseable {
     private final String quotaTbl;
     private final String rewardTbl;
     private final String rewardLogTbl;
+    private final String chatColorTbl;
 
     public DbPool(FileConfiguration config, File dataFolder) throws Exception {
         String prefix = sanitize(config.getString("database.mysql.table-prefix", "dracavetags_"));
@@ -42,6 +43,7 @@ public final class DbPool implements AutoCloseable {
         quotaTbl = prefix + "quota";
         rewardTbl = prefix + "reward";
         rewardLogTbl = prefix + "reward_log";
+        chatColorTbl = prefix + "chat_color";
 
         sqliteMode = config.getString("database.type", "MYSQL").equalsIgnoreCase("SQLITE");
         HikariConfig hikari = new HikariConfig();
@@ -109,6 +111,7 @@ public final class DbPool implements AutoCloseable {
     public String quotaTbl() { return quotaTbl; }
     public String rewardTbl() { return rewardTbl; }
     public String rewardLogTbl() { return rewardLogTbl; }
+    public String chatColorTbl() { return chatColorTbl; }
 
     public String engineSuffix() {
         return sqliteMode ? "" : " ENGINE=InnoDB DEFAULT CHARSET=utf8mb4";
@@ -169,6 +172,10 @@ public final class DbPool implements AutoCloseable {
             statement.executeUpdate("CREATE TABLE IF NOT EXISTS `" + rewardLogTbl
                     + "` (id BIGINT NOT NULL PRIMARY KEY, player_uuid VARCHAR(36) NOT NULL,"
                     + " reward_id BIGINT NOT NULL, claimed_at BIGINT NOT NULL)" + engineSuffix());
+            statement.executeUpdate("CREATE TABLE IF NOT EXISTS `" + chatColorTbl
+                    + "` (player_uuid VARCHAR(36) NOT NULL PRIMARY KEY,"
+                    + " color_mode VARCHAR(16) NOT NULL DEFAULT 'TITLE',"
+                    + " custom_color VARCHAR(7), updated_at BIGINT NOT NULL)" + engineSuffix());
         }
     }
 

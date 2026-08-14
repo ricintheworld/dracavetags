@@ -60,13 +60,33 @@ public final class SourceReader {
             if (!tableExists(c, "title_list")) {
                 return list;
             }
-            try (PreparedStatement ps = c.prepareStatement(
-                     "SELECT id,title_name,buy_type,amount,day,item_stack,is_hide,description FROM title_list");
+            boolean hasIconCol = columnExists(c, "title_list", "icon");
+            boolean hasMaterialCol = columnExists(c, "title_list", "material");
+            String sql = "SELECT id,title_name,buy_type,amount,day,item_stack,is_hide,description"
+                    + (hasIconCol ? ",icon" : "")
+                    + (hasMaterialCol ? ",material" : "")
+                    + " FROM title_list";
+            try (PreparedStatement ps = c.prepareStatement(sql);
                  ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
+                    int idx = 1;
+                    long id = rs.getLong(idx++);
+                    String titleName = nz(rs.getString(idx++));
+                    String buyType = nz(rs.getString(idx++)).toLowerCase(Locale.ROOT);
+                    long amount = rs.getLong(idx++);
+                    int day = rs.getInt(idx++);
+                    String itemStack = rs.getString(idx++);
+                    boolean isHide = rs.getInt(idx++) != 0;
+                    String description = rs.getString(idx++);
+                    String icon = null;
+                    if (hasIconCol) {
+                        icon = rs.getString(idx++);
+                    }
+                    if (hasMaterialCol && icon == null) {
+                        icon = rs.getString(idx++);
+                    }
                     list.add(new TitleData.SourceTitle(
-                            rs.getLong(1), nz(rs.getString(2)), nz(rs.getString(3)).toLowerCase(Locale.ROOT),
-                            rs.getLong(4), rs.getInt(5), rs.getString(6), rs.getInt(7) != 0, rs.getString(8)));
+                            id, titleName, buyType, amount, day, itemStack, isHide, description, icon));
                 }
             }
         }

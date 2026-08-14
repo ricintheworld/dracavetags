@@ -45,6 +45,12 @@ public final class Cfg {
 
     // === 自定义称号 ===
     public static final String CUSTOM_ENABLED = "custom.enabled";
+    public static final String CUSTOM_CREATION_COST_ENABLED = "custom.creation-cost.enabled";
+    public static final String CUSTOM_CREATION_COST_TYPE = "custom.creation-cost.type";
+    public static final String CUSTOM_CREATION_COST_AMOUNT = "custom.creation-cost.amount";
+    public static final String CUSTOM_DELETE_COST_ENABLED = "custom.delete-cost.enabled";
+    public static final String CUSTOM_DELETE_COST_TYPE = "custom.delete-cost.type";
+    public static final String CUSTOM_DELETE_COST_AMOUNT = "custom.delete-cost.amount";
     public static final String CUSTOM_TEXT_MAX_LENGTH = "custom.text.max-length";
     public static final String CUSTOM_DYNAMIC_MAX_COLORS = "custom.dynamic.max-colors";
     public static final String CUSTOM_DYNAMIC_MAX_TEXT_FRAMES = "custom.dynamic.max-text-frames";

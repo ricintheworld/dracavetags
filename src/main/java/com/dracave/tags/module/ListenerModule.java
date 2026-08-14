@@ -3,6 +3,7 @@ package com.dracave.tags.module;
 import com.dracave.tags.DraCaveTags;
 import com.dracave.tags.bootstrap.StartupContext;
 import com.dracave.tags.engine.ChatPrompt;
+import com.dracave.tags.hook.TrChatHook;
 import com.dracave.tags.listen.CardListener;
 import com.dracave.tags.listen.ChatListener;
 import com.dracave.tags.listen.DCTagListener;
@@ -32,6 +33,7 @@ public final class ListenerModule implements Module {
             plugin.getServer().getPluginManager().registerEvents(chatPrompt, plugin);
         }
         plugin.getServer().getPluginManager().registerEvents(new ChatListener(plugin), plugin);
+        TrChatHook.register(plugin);
     }
 
     @Override

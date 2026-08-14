@@ -315,7 +315,7 @@ public final class DCTagCommand implements CommandExecutor, TabCompleter {
             } else if (action.equals("edit") && args.length >= 5) {
                 createCustom(p, args, 3, true);
             } else if (action.equals("create") || action.equals("edit")) {
-                plugin.messages().send(p, "custom-command-help");
+                new com.dracave.tags.screen.CustomCreateScreen(plugin, p).open();
             } else {
                 createQuick(p, args[1]);
             }

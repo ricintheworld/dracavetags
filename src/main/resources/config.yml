@@ -1,20 +1,22 @@
-# 语言: zh_cn | en_us
 lang: zh_cn
 
-# ==================== 聊天 ====================
 chat:
+  # 玩家未装备称号时显示的默认文本（空 = 不显示，支持 MiniMessage）
   enabled: true
-  # 玩家未装备称号时显示的默认文本（空 = 不显示）
-  default-title: "[旅行者]"
   # 管理面板创建称号时的默认文本（支持 MiniMessage 渐变）
+  default-title: "[旅行者]"
   create-title: "[新建称号]"
   # {title}=称号 {player}=玩家名
   format: "{title}{player} »"
 
-# ==================== 商店 ====================
+chat-color:
+  default-mode: TITLE
+  title-color-source: first
+  trchat-native: true
+
 shop:
-  enabled: true
   # 购买后自动穿戴
+  enabled: true
   auto-equip: true
   currencies:
     vault:
@@ -26,7 +28,6 @@ shop:
     item:
       display: "<yellow>物品</yellow>"
 
-# ==================== 数据库 ====================
 database:
   # SQLITE | MYSQL（默认 SQLITE）
   type: SQLITE
@@ -44,7 +45,6 @@ database:
   sqlite:
     file: "data.db"
 
-# ==================== 购买确认界面 ====================
 interface:
   purchase-confirm:
     title: "<gold>确认购买称号</gold>"
@@ -62,11 +62,9 @@ interface:
     error: BLOCK_NOTE_BLOCK_BASS
     delete: BLOCK_NOTE_BLOCK_BASEDRUM
 
-# ==================== 称号切换冷却（秒） ====================
 display:
   toggles-cooldown: 3
 
-# ==================== 动画 ====================
 animation:
   # 默认动画周期（游戏刻，40=2秒）
   default-period-ticks: 40
@@ -75,9 +73,23 @@ animation:
   # 渐变每步跨过几个字符
   gradient-char-step: 1
 
-# ==================== 自定义称号 ====================
 custom:
+  #玩家自定义称号总开关
   enabled: true
+  # 创建花费（玩家创建自定义称号时是否扣费）
+  creation-cost:
+    # 玩家自定义创建称号扣费 true 开启，false 跳过扣费
+    enabled: true
+    # 货币类型：vault（金币）| coin（称号币）| playerpoints（点券）
+    type: vault
+    # 金额（>0 生效，=0 等价于 enabled: false）
+    amount: 1000
+  # 删除花费
+  delete-cost:
+    enabled: false
+    type: vault
+    amount: 1000
+
   text:
     max-length: 16
   dynamic:

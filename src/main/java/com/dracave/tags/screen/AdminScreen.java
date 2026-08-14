@@ -117,6 +117,7 @@ public final class AdminScreen implements ClickableScreen {
                 });
             }
             case CLOSE -> player.closeInventory();
+            case OPEN_PLAYER_MANAGEMENT -> {close(); new OnlinePlayerScreen(plugin, player, 0).open();}
             default -> {
                 String tid = slots.get(rawSlot); if (tid == null) return;
                 if (clickType == ClickType.SHIFT_LEFT || clickType == ClickType.SHIFT_RIGHT) { plugin.getServer().dispatchCommand(player, "dctags del " + tid); player.closeInventory(); }

@@ -9,6 +9,7 @@ import com.dracave.tags.config.TagLoader;
 import com.dracave.tags.economy.EcoRegistry;
 import com.dracave.tags.engine.BuffEngine;
 import com.dracave.tags.engine.CardEngine;
+import com.dracave.tags.engine.ChatColorEngine;
 import com.dracave.tags.engine.ChatPrompt;
 import com.dracave.tags.engine.CustomEngine;
 import com.dracave.tags.engine.DCTagDefEngine;
@@ -101,6 +102,10 @@ public final class DraCaveTags extends JavaPlugin {
 
     public RewardEngine rewardEngine() {
         return ctx() != null ? ctx().getOrNull(RewardEngine.class) : null;
+    }
+
+    public ChatColorEngine chatColorEngine() {
+        return ctx() != null ? ctx().getOrNull(ChatColorEngine.class) : null;
     }
 
     public CoinStore coinStore() {

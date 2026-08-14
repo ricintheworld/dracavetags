@@ -16,6 +16,7 @@ import com.dracave.tags.economy.PointsEco;
 import com.dracave.tags.economy.VaultEco;
 import com.dracave.tags.engine.BuffEngine;
 import com.dracave.tags.engine.CardEngine;
+import com.dracave.tags.engine.ChatColorEngine;
 import com.dracave.tags.engine.CustomEngine;
 import com.dracave.tags.engine.DCTagDefEngine;
 import com.dracave.tags.engine.DCTagEngine;
@@ -26,6 +27,7 @@ import com.dracave.tags.handlers.DCTag;
 import com.dracave.tags.handlers.EcoType;
 import com.dracave.tags.panel.AdminConsole;
 import com.dracave.tags.storage.CoinStore;
+import com.dracave.tags.storage.ChatColorStore;
 import com.dracave.tags.storage.CustomDCTagStore;
 import com.dracave.tags.storage.DbPool;
 import com.dracave.tags.storage.DCTagStore;
@@ -67,6 +69,7 @@ public final class DatabaseModule implements Module {
     private BuffEngine buffEngine;
     private ParticleEngine particleEngine;
     private RewardEngine rewardEngine;
+    private ChatColorEngine chatColorEngine;
     private SyncBus syncBus;
 
     public DatabaseModule(@NotNull StartupContext context) {
@@ -102,6 +105,8 @@ public final class DatabaseModule implements Module {
             defEngine = new DCTagDefEngine(plugin, defStore, registry, tagLoader);
             PlayerStore playerStore = new PlayerStore(database);
             tagEngine = new DCTagEngine(plugin, registry, playerStore);
+            ChatColorStore chatColorStore = new ChatColorStore(database);
+            chatColorEngine = new ChatColorEngine(plugin, chatColorStore, tagEngine);
             buffEngine = new BuffEngine(plugin, tagEngine);
             particleEngine = new ParticleEngine(plugin, tagEngine);
             tagEngine.setEffectReconciler(playerId -> {
@@ -149,11 +154,14 @@ public final class DatabaseModule implements Module {
             context.bind(AdminConsole.class, adminConsole);
             context.bind(SyncBus.class, syncBus);
             context.bind(PlayerStore.class, playerStore);
+            context.bind(ChatColorStore.class, chatColorStore);
+            context.bind(ChatColorEngine.class, chatColorEngine);
             context.bind(TagLoader.class, tagLoader);
 
             // 加载在线玩家
             for (Player player : Bukkit.getOnlinePlayers()) {
                 tagEngine.load(player.getUniqueId());
+                chatColorEngine.load(player.getUniqueId());
             }
             startCrossServerSynchronization(plugin, tagEngine, defEngine, syncBus);
             shopEngine.recoverInterruptedPurchases();

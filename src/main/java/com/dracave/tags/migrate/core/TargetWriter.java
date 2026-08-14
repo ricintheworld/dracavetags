@@ -122,7 +122,8 @@ public final class TargetWriter {
                         + " VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)")) {
             ps.setString(1, id);
             ps.setString(2, titleText);
-            ps.setString(3, "NAME_TAG");
+            String icon = t.icon() != null && !t.icon().isBlank() ? t.icon() : "NAME_TAG";
+            ps.setString(3, icon);
             ps.setInt(4, (int) t.id());
             ps.setBoolean(5, false);
             ps.setString(6, permission);

@@ -38,15 +38,22 @@ public final class ViewScreen implements ClickableScreen {
     private final int page;
     private final Map<Integer, String> tagSlots = new HashMap<>();
     private final RefreshCache refreshCache = new RefreshCache();
+    private final boolean returnToPlayerActions;
     private Inventory inventory;
     private SchedulerUtil.Task refreshTask;
 
     public ViewScreen(DraCaveTags plugin, Player viewer, UUID targetId, String targetName, int page) {
+        this(plugin, viewer, targetId, targetName, page, false);
+    }
+
+    public ViewScreen(DraCaveTags plugin, Player viewer, UUID targetId, String targetName, int page,
+                      boolean returnToPlayerActions) {
         this.plugin = plugin;
         this.viewer = viewer;
         this.targetId = targetId;
         this.targetName = targetName;
         this.page = Math.max(0, page);
+        this.returnToPlayerActions = returnToPlayerActions;
     }
 
     public void open() {
@@ -154,7 +161,16 @@ public final class ViewScreen implements ClickableScreen {
     public void click(int rawSlot, ClickType clickType) {
         if (rawSlot == 49) {
             plugin.screenSound().click(viewer);
-            new AdminScreen(plugin, viewer, 0).open();
+            if (returnToPlayerActions) {
+                Player target = Bukkit.getPlayer(targetId);
+                if (target != null && target.isOnline()) {
+                    new PlayerActionScreen(plugin, viewer, target).open();
+                } else {
+                    new AdminScreen(plugin, viewer, 0).open();
+                }
+            } else {
+                new AdminScreen(plugin, viewer, 0).open();
+            }
         } else if (rawSlot == 45 && page > 0) {
             plugin.screenSound().switchPage(viewer);
             new ViewScreen(plugin, viewer, targetId, targetName, page - 1).open();

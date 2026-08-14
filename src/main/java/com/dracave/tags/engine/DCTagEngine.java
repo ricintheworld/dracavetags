@@ -259,12 +259,16 @@ public final class DCTagEngine {
     }
 
     public CompletableFuture<DCTagResult> equip(UUID playerId, String rawTagId) {
+        return equip(playerId, rawTagId, false);
+    }
+
+    public CompletableFuture<DCTagResult> equip(UUID playerId, String rawTagId, boolean bypassCooldown) {
         String tagId = DCTagRegistry.normalizeId(rawTagId);
         if (registry.get(tagId) == null || !registry.availableTo(tagId, playerId)) {
             return completed(DCTagResult.TITLE_NOT_FOUND);
         }
         int cooldownSeconds = plugin.getConfig().getInt(Cfg.DISPLAY_TOGGLES_COOLDOWN, 0);
-        if (cooldownSeconds > 0) {
+        if (!bypassCooldown && cooldownSeconds > 0) {
             long now = System.currentTimeMillis();
             Long last = lastEquipAt.get(playerId);
             if (last != null && now - last < cooldownSeconds * 1000L) {
