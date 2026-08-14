@@ -125,9 +125,24 @@ public final class MigrateConfig {
         String prefix = "dracavetags_";
         String sqliteFile = "data.db";
         try {
+            boolean inDatabase = false;
             for (String line : Files.readAllLines(new File(configYml).toPath())) {
                 String t = line.trim();
                 String key = t.replaceAll("\\s*#.*$", "");
+                if (key.equals("database:")) {
+                    inDatabase = true;
+                    continue;
+                }
+                if (inDatabase && !key.isEmpty() && !key.startsWith("#")
+                        && !key.startsWith("mysql:") && !key.startsWith("sqlite:")
+                        && !key.startsWith("table-prefix:") && !key.startsWith("type:")
+                        && !key.startsWith("file:") && !key.startsWith("host:")
+                        && !key.startsWith("port:") && !key.startsWith("user:")
+                        && !key.startsWith("password:") && !key.startsWith("params:")
+                        && !key.startsWith("pool-size:")) {
+                    inDatabase = false;
+                }
+                if (!inDatabase) continue;
                 if (key.startsWith("type:")) {
                     type = key.substring(5).trim().toUpperCase();
                 } else if (key.startsWith("table-prefix:")) {
